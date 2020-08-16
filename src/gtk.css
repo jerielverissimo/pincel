@@ -1,0 +1,72 @@
+.window {
+  border-radius: 10px; 
+}
+
+button.circular,
+.button.circular {
+    /*color: transparent;*/
+}
+
+button.red {
+    background: #ff3c3c;
+}
+
+button.blue {
+    background: #1e6ec8;
+}
+
+button.yellow {
+    background: #ebb437;
+}
+
+button.green {
+    background: #78af46;
+}
+
+button.orange {
+    background: #eb7d0f;
+}
+
+popover,
+.popover {
+    background: @theme_bg_color;
+    padding: 3px;
+}
+
+popover button,
+.popover .button {
+	border: none;
+	border-radius: 0;
+	text-shadow: none;
+	box-shadow: none;
+}
+
+popover button:first-child,
+.popover .button:first-child {
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+popover button:last-child,
+.popover .button:last-child {
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+image {
+  color: inherit;
+}
+
+.mini,
+.mini .titlebar {
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.mini:backdrop,
+.mini:backdrop .titlebar {
+  background: rgba(255, 255, 255, 0.70);
+}
+
+.mini .titlebar button {
+  color: #333;
+}
