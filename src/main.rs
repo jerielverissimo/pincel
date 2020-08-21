@@ -155,9 +155,9 @@ fn main() {
 
     let brush_color = CurrentColor::new();
 
-    thread::spawn(move || {
-        init_gtk_window();
-    });
+    //thread::spawn(move || {
+        //init_gtk_window();
+    //});
 
     conn.map_window(win_id).unwrap();
     conn.set_input_focus(InputFocus::PointerRoot, win_id, CURRENT_TIME)

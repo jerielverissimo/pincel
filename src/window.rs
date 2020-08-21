@@ -54,8 +54,6 @@ pub fn new_button(
     button.connect_clicked(move |_| {
         let mut brush_color = CurrentColor::new();
         brush_color.set(name);
-        dbg!(name);
-        dbg!(&brush_color);
     });
 
     buttons.insert(name, button);
