@@ -156,7 +156,7 @@ fn main() {
     let brush_color = CurrentColor::new();
 
     //thread::spawn(move || {
-        //init_gtk_window();
+    //init_gtk_window();
     //});
 
     conn.map_window(win_id).unwrap();

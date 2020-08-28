@@ -69,7 +69,7 @@ impl Movement {
         // the last recorde coordinate
         let events = events.reply().unwrap().events;
 
-        if events.len() == 0 {
+        if events.is_empty() {
             return Ok(());
         }
 
