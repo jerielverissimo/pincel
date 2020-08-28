@@ -2,6 +2,4 @@
 
 ## cargo run
 
-[](demo/demo.gif)
-
-![](demo/video.gif )
+![](demo/demo.gif)
