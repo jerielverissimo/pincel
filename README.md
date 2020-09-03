@@ -1,4 +1,4 @@
-# pincel
+# pincel [WIP]
 
 ## cargo run
 
