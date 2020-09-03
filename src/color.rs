@@ -35,7 +35,7 @@ impl CurrentColor {
 
         ONCE.call_once(|| unsafe {
             let color = CurrentColorSingleton {
-                inner: Arc::new(Mutex::new(CurrentColor::NotSupported)),
+                inner: Arc::new(Mutex::new(CurrentColor::Yellow)),
             };
 
             COLOR = std::mem::transmute(Box::new(color));

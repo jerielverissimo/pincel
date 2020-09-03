@@ -52,6 +52,7 @@ pub fn new_button(
     button.show_all();
 
     button.connect_clicked(move |_| {
+        println!("clicking");
         let mut brush_color = CurrentColor::new();
         brush_color.set(name);
     });
@@ -72,8 +73,8 @@ pub fn build_ui(application: &gtk::Application) {
     window.set_border_width(10);
     window.set_default_size(350, 70);
     window.set_keep_above(true);
-    window.set_type_hint(gdk::WindowTypeHint::Utility);
-    window.move_(1250 * 2, 768);
+    window.set_type_hint(gdk::WindowTypeHint::Dock);
+    window.move_(1350 * 2, 1768 * 2);
 
     let window_context = window.get_style_context();
     window_context.add_class("window");

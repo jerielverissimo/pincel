@@ -1,6 +1,5 @@
 mod color;
 mod movement;
-mod rhomboid;
 mod window;
 
 use color::*;
@@ -93,8 +92,10 @@ fn main() {
     )
     .unwrap();
 
+    let brush_color = CurrentColor::new();
+
     let gc_aux = CreateGCAux::new()
-        .foreground(0xebb437)
+        .foreground(brush_color.value())
         .graphics_exposures(1)
         .line_width(1);
 
@@ -153,11 +154,9 @@ fn main() {
 
     conn.create_gc(gc_id, win_id, &gc_aux).unwrap();
 
-    let brush_color = CurrentColor::new();
-
-    //thread::spawn(move || {
-    //init_gtk_window();
-    //});
+    thread::spawn(move || {
+        init_gtk_window();
+    });
 
     conn.map_window(win_id).unwrap();
     conn.set_input_focus(InputFocus::PointerRoot, win_id, CURRENT_TIME)
@@ -181,7 +180,6 @@ fn main() {
             }
             Event::KeyRelease(_) => {}
             Event::Expose(e) => {
-                dbg!("Drawing");
                 for mov in &stack {
                     if let Some(mov) = &mov {
                         mov.expose(&conn, win_id, gc_id, &e);
@@ -191,16 +189,14 @@ fn main() {
             }
             Event::ButtonPress(event) => {
                 if event.detail == 1 {
-                    dbg!(&brush_color);
-
-                    let new_gc_id = conn.generate_id().unwrap();
-
-                    let new_gc = CreateGCAux::new()
+                    let new_gc = ChangeGCAux::new()
                         .foreground(brush_color.value())
                         .graphics_exposures(1)
                         .line_width(1);
 
-                    conn.create_gc(new_gc_id, win_id, &new_gc).unwrap();
+                    conn.change_gc(gc_id, &new_gc).unwrap();
+
+                    conn.flush().unwrap();
 
                     let temp = Some(Movement::new(event, {
                         id += 1;
@@ -214,7 +210,6 @@ fn main() {
 
                 // right button
                 if event.detail == 3 {
-                    dbg!("clear");
                     if stack.is_empty() {
                         continue;
                     }
@@ -234,7 +229,6 @@ fn main() {
                     continue;
                 }
                 if event.detail == 1 {
-                    dbg!(current);
                     stack[current]
                         .as_mut()
                         .unwrap()
