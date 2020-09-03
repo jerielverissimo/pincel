@@ -3,7 +3,7 @@ use gtk::prelude::*;
 
 use cairo::Context;
 
-use super::color::CurrentColor;
+use super::color::CurrentColorSingleton;
 
 type String = &'static str;
 
@@ -53,7 +53,7 @@ pub fn new_button(
 
     button.connect_clicked(move |_| {
         println!("clicking");
-        let mut brush_color = CurrentColor::new();
+        let mut brush_color = CurrentColorSingleton::new();
         brush_color.set(name);
     });
 

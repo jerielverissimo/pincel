@@ -34,13 +34,7 @@ fn main() {
     }
 
     // fetch a visual supporting alpha channels
-    let visual = alpha_depths
-        .next()
-        .unwrap()
-        .visuals
-        .iter()
-        .nth(1 as usize)
-        .unwrap();
+    let visual = alpha_depths.next().unwrap().visuals.get(1).unwrap();
 
     let win_start_x = 0;
     let win_start_y = 0;
@@ -92,7 +86,7 @@ fn main() {
     )
     .unwrap();
 
-    let brush_color = CurrentColor::new();
+    let brush_color = CurrentColorSingleton::new();
 
     let gc_aux = CreateGCAux::new()
         .foreground(brush_color.value())
@@ -101,25 +95,25 @@ fn main() {
 
     free_colormap(&conn, colormap).unwrap();
 
-    let win_type_atom = intern_atom(&conn, true, "_NET_WM_WINDOW_TYPE".as_bytes())
+    let win_type_atom = intern_atom(&conn, true, b"_NET_WM_WINDOW_TYPE")
         .unwrap()
         .reply()
         .unwrap()
         .atom;
 
-    let win_menu_atom = intern_atom(&conn, true, "_NET_WM_WINDOW_TYPE_SPLASH".as_bytes())
+    let win_menu_atom = intern_atom(&conn, true, b"_NET_WM_WINDOW_TYPE_SPLASH")
         .unwrap()
         .reply()
         .unwrap()
         .atom;
 
-    let win_state_atom = intern_atom(&conn, true, "_NET_WM_STATE".as_bytes())
+    let win_state_atom = intern_atom(&conn, true, b"_NET_WM_STATE")
         .unwrap()
         .reply()
         .unwrap()
         .atom;
 
-    let win_on_top_atom = intern_atom(&conn, true, "_NET_WM_STATE_STAYS_ON_TOP".as_bytes())
+    let win_on_top_atom = intern_atom(&conn, true, b"_NET_WM_STATE_STAYS_ON_TOP")
         .unwrap()
         .reply()
         .unwrap()
@@ -182,6 +176,14 @@ fn main() {
             Event::Expose(e) => {
                 for mov in &stack {
                     if let Some(mov) = &mov {
+                        let new_gc = ChangeGCAux::new()
+                            .foreground(mov.color.value())
+                            .graphics_exposures(1)
+                            .line_width(1);
+
+                        conn.change_gc(gc_id, &new_gc).unwrap();
+
+                        conn.flush().unwrap();
                         mov.expose(&conn, win_id, gc_id, &e);
                     }
                 }
@@ -198,10 +200,7 @@ fn main() {
 
                     conn.flush().unwrap();
 
-                    let temp = Some(Movement::new(event, {
-                        id += 1;
-                        id
-                    }));
+                    let temp = Some(Movement::new(event, brush_color.clone().into()));
                     stack.push(temp);
                     current = stack.len() - 1;
 

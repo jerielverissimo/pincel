@@ -6,28 +6,6 @@ pub struct CurrentColorSingleton {
 }
 
 impl CurrentColorSingleton {
-    pub fn set(&mut self, name: &str) {
-        let mut data = self.inner.lock().unwrap();
-        *data = CurrentColor::from(name);
-    }
-
-    pub fn value(&self) -> u32 {
-        let data = self.inner.lock().unwrap();
-        data.value()
-    }
-}
-
-#[derive(Debug)]
-pub enum CurrentColor {
-    Red,
-    Blue,
-    Yellow,
-    Green,
-    Orange,
-    NotSupported,
-}
-
-impl CurrentColor {
     /// Creates a singleton
     pub fn new() -> CurrentColorSingleton {
         static mut COLOR: *const CurrentColorSingleton = 0 as *const _;
@@ -44,7 +22,29 @@ impl CurrentColor {
         unsafe { (&*COLOR).clone() }
     }
 
-    fn value(&self) -> u32 {
+    pub fn set(&mut self, name: &str) {
+        let mut data = self.inner.lock().unwrap();
+        *data = CurrentColor::from(name);
+    }
+
+    pub fn value(&self) -> u32 {
+        let data = self.inner.lock().unwrap();
+        data.value()
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum CurrentColor {
+    Red,
+    Blue,
+    Yellow,
+    Green,
+    Orange,
+    NotSupported,
+}
+
+impl CurrentColor {
+    pub fn value(&self) -> u32 {
         match self {
             CurrentColor::Red => 0xff3c3c,
             CurrentColor::Blue => 0x1e6ec8,
@@ -66,5 +66,12 @@ impl From<&str> for CurrentColor {
             "orange" => CurrentColor::Orange,
             _ => Self::NotSupported,
         }
+    }
+}
+
+impl From<CurrentColorSingleton> for CurrentColor {
+    fn from(color: CurrentColorSingleton) -> Self {
+        let data = color.inner.lock().unwrap();
+        *data
     }
 }

@@ -1,3 +1,5 @@
+use crate::color::CurrentColor;
+
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
 
@@ -9,7 +11,7 @@ const PADDING: i16 = 5;
 /// rhomboid, or two rhomboids connected by a winding line
 #[derive(Clone, Debug)]
 pub struct Movement {
-    pub id: i32,
+    pub color: CurrentColor,
     pub lines: Vec<(i16, i16)>,
 
     left: i16,
@@ -24,7 +26,7 @@ pub struct Movement {
 }
 
 impl Movement {
-    pub fn new(ev: ButtonPressEvent, id: i32) -> Self {
+    pub fn new(ev: ButtonPressEvent, color: CurrentColor) -> Self {
         let left = ev.event_x - PADDING;
         let right = ev.event_x + PADDING;
         let top = ev.event_y - PADDING;
@@ -34,7 +36,7 @@ impl Movement {
         lines.push((ev.event_x, ev.event_y));
 
         Self {
-            id,
+            color,
             left,
             right,
             top,
