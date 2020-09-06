@@ -12,3 +12,14 @@ gtk = "0.9.1"
 gio = "0.9.0"
 gdk = "0.13.0"
 cairo-rs = "0.9.1"
+
+[profile.release]
+opt-level = "z" 
+debug = false
+debug-assertions = false
+overflow-checks = false
+lto = true
+panic = 'abort'
+incremental = false
+codegen-units = 1
+rpath = false

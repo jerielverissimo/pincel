@@ -1,5 +1,13 @@
 use super::app::*;
-use crate::{domain::{entities::{color::CurrentColorSingleton, graphics_context::GraphicContext, movement::Movement}, error::PincelError}, gui::{gtk::window::init_gtk_window, x11::window_builder::WindowBuilder}};
+use crate::{
+    domain::{
+        entities::{
+            color::CurrentColorSingleton, graphics_context::GraphicContext, movement::Movement,
+        },
+        error::PincelError,
+    },
+    gui::{gtk::window::init_gtk_window, x11::window_builder::WindowBuilder},
+};
 
 use x11rb::wrapper::ConnectionExt as _;
 

@@ -16,7 +16,7 @@ pub fn init_gtk_window() {
         gtk::Application::new(Some("com.github.gtk-rs.examples.basic"), Default::default())
             .expect("Initialization failed...");
 
-    application.connect_startup(move |app| {
+    application.connect_activate(move |app| {
         // The CSS "magic" happens here.
         let provider = gtk::CssProvider::new();
         provider.load_from_data(STYLE).expect("Failed to load CSS");
