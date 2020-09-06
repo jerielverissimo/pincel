@@ -1,7 +1,6 @@
-
+use crate::domain::error::PincelError;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
-use crate::domain::error::PincelError;
 
 const BLACK: u32 = 0x00;
 const TRUE: u32 = 1;
@@ -73,8 +72,8 @@ impl<'wp> WindowBuilder<'wp> {
                     | EventMask::ButtonMotion
                     | EventMask::ButtonRelease
                     | EventMask::Button1Motion
-                    | EventMask::KeyPress
-                    | EventMask::KeyRelease,
+                    | EventMask::EnterWindow
+                    | EventMask::KeyPress,
             )
             .backing_pixel(BLACK)
             .border_pixel(BLACK)

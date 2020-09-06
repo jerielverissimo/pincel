@@ -47,45 +47,67 @@ impl<C: Connection + Send + Sync> Application<C> {
 
     pub fn dispatch(&mut self, event: Event) -> Result<(), PincelError> {
         match event {
-            Event::KeyPress(e) => {
-                ExitCommand::new(self, e).execute()?;
-            }
-            Event::KeyRelease(_) => {}
-            Event::Expose(e) => {
-                DrawCommand::new(self, e).execute()?;
-            }
-            Event::ButtonPress(event) => {
-                LeftClickCommand::new(self, event).execute()?;
-                RightClickCommand::new(self, event).execute()?;
-            }
-            Event::ButtonRelease(event) => {
-                if self.stack.is_empty() {
-                    self.skip();
-                }
-                LeftReleaseCommand::new(self, event).execute()?;
-            }
-            Event::MotionNotify(event) => {
-                if self.stack.is_empty() {
-                    self.skip();
-                }
-                MotionCommand::new(self, event).execute()?;
-            }
-            Event::EnterNotify(_) => {
-                self.conn
-                    .set_input_focus(InputFocus::PointerRoot, self.win_id, CURRENT_TIME)?;
-            }
-            Event::ClientMessage(event) => {
-                let data = event.data.as_data32();
-                if event.format == 32
-                    && event.window == self.win_id
-                    && data[0] == self.atoms.WM_DELETE_WINDOW
-                {
-                    println!("Window was asked to close");
-                    return Ok(());
-                }
-            }
+            Event::KeyPress(e) => self.handle_key_press(e)?,
+            Event::Expose(e) => self.handle_expose(e)?,
+            Event::ButtonPress(e) => self.handle_button_press(e)?,
+            Event::ButtonRelease(e) => self.handle_button_release(e)?,
+            Event::MotionNotify(e) => self.handle_motion_notify(e)?,
+            Event::EnterNotify(e) => self.handle_enter_notify(e)?,
+            Event::ClientMessage(e) => self.handle_client_message(e)?,
             Event::Error(e) => return Err(PincelError::XlibError(e)),
             _ => println!("Got an unknown event"),
+        }
+        Ok(())
+    }
+
+    fn handle_key_press(&mut self, e: KeyPressEvent) -> Result<(), PincelError> {
+        ExitCommand::new(self, e).execute()?;
+        Ok(())
+    }
+
+    fn handle_expose(&mut self, e: ExposeEvent) -> Result<(), PincelError> {
+        DrawCommand::new(self, e).execute()?;
+        Ok(())
+    }
+
+    fn handle_button_press(&mut self, e: ButtonPressEvent) -> Result<(), PincelError> {
+        self.conn
+            .set_input_focus(InputFocus::None, self.win_id, CURRENT_TIME)?;
+        LeftClickCommand::new(self, e).execute()?;
+        RightClickCommand::new(self, e).execute()?;
+        Ok(())
+    }
+
+    fn handle_button_release(&mut self, e: ButtonReleaseEvent) -> Result<(), PincelError> {
+        if self.stack.is_empty() {
+            self.skip();
+        }
+        LeftReleaseCommand::new(self, e).execute()?;
+        Ok(())
+    }
+
+    fn handle_motion_notify(&mut self, e: MotionNotifyEvent) -> Result<(), PincelError> {
+        if self.stack.is_empty() {
+            self.skip();
+        }
+        MotionCommand::new(self, e).execute()?;
+        Ok(())
+    }
+
+    fn handle_enter_notify(&mut self, _: EnterNotifyEvent) -> Result<(), PincelError> {
+        self.conn
+            .set_input_focus(InputFocus::None, self.win_id, CURRENT_TIME)?;
+        Ok(())
+    }
+
+    fn handle_client_message(&mut self, event: ClientMessageEvent) -> Result<(), PincelError> {
+        let data = event.data.as_data32();
+        if event.format == 32
+            && event.window == self.win_id
+            && data[0] == self.atoms.WM_DELETE_WINDOW
+        {
+            println!("Window was asked to close");
+            return Ok(());
         }
         Ok(())
     }

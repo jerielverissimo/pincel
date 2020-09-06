@@ -39,8 +39,8 @@ pub fn init() -> Result<Application<impl Connection + Send + Sync>, PincelError>
     let colormap = GraphicContext::genarate_colormap(&conn, screen, &visual)?;
 
     let (width, height) = (
-        (screen.width_in_pixels as f32 / 1.5) as u16,
-        (screen.height_in_pixels as f32 / 1.5) as u16,
+        (screen.width_in_pixels as f32) as u16,
+        (screen.height_in_pixels as f32) as u16,
     );
 
     WindowBuilder::new()
