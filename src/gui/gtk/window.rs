@@ -72,7 +72,7 @@ pub fn build_ui(application: &gtk::Application) {
     window.set_border_width(10);
     window.set_default_size(350, 70);
     window.set_keep_above(true);
-    window.set_type_hint(gdk::WindowTypeHint::Dock);
+    window.set_type_hint(gdk::WindowTypeHint::Toolbar);
     window.move_(1350 * 2, 1768 * 2);
 
     let window_context = window.get_style_context();
