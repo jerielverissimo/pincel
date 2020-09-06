@@ -1,17 +1,7 @@
-use super::app::*;
-use crate::{
-    domain::{
-        entities::{
-            color::CurrentColorSingleton, graphics_context::GraphicContext, movement::Movement,
-        },
-        error::PincelError,
-    },
-    gui::{gtk::window::init_gtk_window, x11::window_builder::WindowBuilder},
-};
+use super::{app::Application, cli::Cli};
+use crate::{domain::*, gui::window_builder::WindowBuilder};
 
 use x11rb::wrapper::ConnectionExt as _;
-
-use std::thread;
 
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
@@ -94,10 +84,6 @@ pub fn init() -> Result<Application<impl Connection + Send + Sync>, PincelError>
 
     conn.create_gc(gc_id, win_id, &gc_aux)?;
 
-    thread::spawn(move || {
-        init_gtk_window();
-    });
-
     conn.map_window(win_id)?;
     conn.set_input_focus(InputFocus::PointerRoot, win_id, CURRENT_TIME)?;
 
@@ -117,6 +103,7 @@ pub fn init() -> Result<Application<impl Connection + Send + Sync>, PincelError>
         skip_frame: false,
         current,
         atoms,
+        cli: Cli::new(),
     };
     Ok(app)
 }

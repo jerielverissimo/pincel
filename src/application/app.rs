@@ -1,11 +1,9 @@
 use super::*;
-use crate::commands::{
-    draw_command::*, exit_command::*, left_click_command::*, left_release_command::*,
-    motion_command::*, right_click_command::*, Command,
-};
+use crate::commands::*;
 use crate::domain::error::PincelError;
 use crate::domain::*;
 use app_initializer::*;
+use cli::Cli;
 use entities::{color::CurrentColorSingleton, movement::Movement};
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
@@ -22,10 +20,12 @@ pub struct Application<C> {
     pub gc_id: u32,
     pub current: usize,
     pub atoms: AtomCollection,
+    pub cli: Cli,
 }
 
 impl<C: Connection + Send + Sync> Application<C> {
     pub fn run(&mut self) -> Result<(), PincelError> {
+        self.cli.toggle_gui();
         while self.is_running {
             self.reset_frame();
             let event = self.conn.wait_for_event()?;
@@ -36,6 +36,7 @@ impl<C: Connection + Send + Sync> Application<C> {
         }
         Ok(())
     }
+
     pub fn reset_frame(&mut self) {
         self.skip_frame = false;
     }
