@@ -52,7 +52,6 @@ pub fn new_button(
     button.show_all();
 
     button.connect_clicked(move |_| {
-        println!("clicking");
         let mut brush_color = CurrentColorSingleton::new();
         brush_color.set(name);
     });
