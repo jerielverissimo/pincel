@@ -1,5 +1,9 @@
 use super::*;
 
+use event_handler::EventHandler;
+use x11rb::{protocol::{Event, xproto::*}, connection::Connection};
+use app::Application;
+
 pub trait Command {
     fn execute(&mut self) -> Result<(), PincelError>;
 }

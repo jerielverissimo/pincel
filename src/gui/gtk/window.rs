@@ -1,9 +1,9 @@
+use crate::domain::entities::color::*;
+
 use gio::prelude::*;
 use gtk::prelude::*;
 
 use cairo::Context;
-
-use super::color::CurrentColorSingleton;
 
 type String = &'static str;
 

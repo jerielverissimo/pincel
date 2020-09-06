@@ -9,8 +9,8 @@ use std::option::NoneError;
 
 #[derive(Debug)]
 pub enum PincelError {
-    ConnectionError(ConnectionError),
     MissingWinParams,
+    ConnectionError(ConnectionError),
     ReplyOrIdError(ReplyOrIdError),
     ReplyError(ReplyError),
     ConnectError(ConnectError),

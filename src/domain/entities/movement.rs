@@ -1,4 +1,4 @@
-use crate::color::CurrentColor;
+use super::color::CurrentColor;
 
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
@@ -21,8 +21,6 @@ pub struct Movement {
 
     time: u32,
     is_finished: bool,
-    //first: Rhomboid,
-    //last: Option<Rhomboid>,
 }
 
 impl Movement {

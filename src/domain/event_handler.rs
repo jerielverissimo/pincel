@@ -1,4 +1,11 @@
-use super::*;
+use super::error::PincelError;
+use crate::application::app::Application;
+use crate::domain::*;
+use entities::{color::CurrentColor, graphics_context::GraphicContext, movement::Movement};
+use x11rb::{
+    connection::*,
+    protocol::{xproto::*, Event},
+};
 
 const LEFT_MOUSE_BUTTON: u8 = 1;
 const RIGHT_MOUSE_BUTTON: u8 = 3;

@@ -1,9 +1,12 @@
 use super::*;
-use app_initializer::*;
-use commands::{
+use crate::commands::{
     draw_command::*, exit_command::*, left_click_command::*, left_release_command::*,
     motion_command::*, right_click_command::*, Command,
 };
+use crate::domain::error::PincelError;
+use crate::domain::*;
+use app_initializer::*;
+use entities::{color::CurrentColorSingleton, movement::Movement};
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
 use x11rb::protocol::Event;

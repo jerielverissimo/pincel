@@ -1,7 +1,7 @@
-use super::PincelError;
 
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
+use crate::domain::error::PincelError;
 
 const BLACK: u32 = 0x00;
 const TRUE: u32 = 1;
