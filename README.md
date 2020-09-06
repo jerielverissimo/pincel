@@ -21,3 +21,4 @@ pincel
 ```bash
 pincel -g
 ```
+#### To exit press q, ESC or CapsLock
