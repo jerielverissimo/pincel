@@ -40,6 +40,7 @@ pub enum CurrentColor {
     Yellow,
     Green,
     Orange,
+    Black,
     NotSupported,
 }
 
@@ -51,6 +52,7 @@ impl CurrentColor {
             CurrentColor::Yellow => 0xebb437,
             CurrentColor::Green => 0x78af46,
             CurrentColor::Orange => 0xeb7d0f,
+            CurrentColor::Black => 0x242424,
             CurrentColor::NotSupported => 0x00,
         }
     }
@@ -59,11 +61,12 @@ impl CurrentColor {
 impl From<&str> for CurrentColor {
     fn from(name: &str) -> Self {
         match name {
-            "red" => CurrentColor::Red,
-            "blue" => CurrentColor::Blue,
-            "yellow" => CurrentColor::Yellow,
-            "green" => CurrentColor::Green,
-            "orange" => CurrentColor::Orange,
+            "red" => Self::Red,
+            "blue" => Self::Blue,
+            "yellow" => Self::Yellow,
+            "green" => Self::Green,
+            "orange" => Self::Orange,
+            "black" => Self::Black,
             _ => Self::NotSupported,
         }
     }

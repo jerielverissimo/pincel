@@ -61,7 +61,7 @@ impl<C: Connection + Send + Sync> Application<C> {
     }
 
     fn handle_key_press(&mut self, e: KeyPressEvent) -> Result<(), PincelError> {
-        ExitCommand::new(self, e).execute()?;
+        KeyPressCommand::new(self, e).execute()?;
         Ok(())
     }
 

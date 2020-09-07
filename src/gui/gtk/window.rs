@@ -71,7 +71,6 @@ pub fn build_ui(application: &gtk::Application) {
     window.set_title("First GTK+ Program");
     window.set_border_width(10);
     window.set_default_size(350, 70);
-    window.set_keep_above(true);
     window.set_type_hint(gdk::WindowTypeHint::Toolbar);
     window.move_(1350 * 2, 1768 * 2);
 
@@ -104,6 +103,7 @@ pub fn build_ui(application: &gtk::Application) {
     window.add(&grid);
 
     window.show_all();
+    window.set_keep_above(true);
 }
 
 fn set_visual(window: &gtk::ApplicationWindow, _screen: Option<&gdk::Screen>) {

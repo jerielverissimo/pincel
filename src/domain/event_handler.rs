@@ -5,6 +5,7 @@ use x11rb::{
     connection::*,
     protocol::{xproto::*, Event},
 };
+use Keys::*;
 
 const LEFT_MOUSE_BUTTON: u8 = 1;
 const RIGHT_MOUSE_BUTTON: u8 = 3;
@@ -18,16 +19,18 @@ where
 }
 
 impl<C: Connection + Send + Sync> EventHandler<'_, C> {
-    pub fn exit(&mut self) {
+    pub fn key_press_handler(&mut self) {
         if let Event::KeyPress(e) = self.event {
-            const Q: u8 = 24;
-            const CAPS_LOCK: u8 = 66;
-            const ESC: u8 = 9;
-            match e.detail {
-                Q | CAPS_LOCK | ESC => self.app.is_running = false,
+            match e.detail.into() {
+                Q | CapsLock | Esc => self.exit(),
+                One | Two | Three | Four | Five | Six => self.switch_color(e.detail.into()),
                 _ => {}
             }
         }
+    }
+
+    fn exit(&mut self) {
+        self.app.is_running = false;
     }
 
     pub fn draw(&self) -> Result<(), PincelError> {
@@ -121,5 +124,19 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
 
         self.app.conn.flush()?;
         Ok(())
+    }
+
+    fn switch_color(&self, key: Keys) {
+        let color = match key {
+            One => "red",
+            Two => "blue",
+            Three => "yellow",
+            Four => "green",
+            Five => "orange",
+            Six => "black",
+            _ => "",
+        };
+        let mut brush_color = CurrentColorSingleton::new();
+        brush_color.set(color);
     }
 }
