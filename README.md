@@ -21,6 +21,21 @@ pincel
 ```bash
 pincel -g
 ```
+### Switch color
+press number keys:
+
+  1 - red
+  <!-- blank line -->
+  2 - blue
+  <!-- blank line -->
+  3 - yellow
+  <!-- blank line -->
+  4 - green
+  <!-- blank line -->
+  5 - orange
+  <!-- blank line -->
+  6 - black
+
 #### To exit press q, ESC or CapsLock
 
 ## Notes
