@@ -36,6 +36,8 @@ press number keys:
   <!-- blank line -->
   6 - black
 
+#### left click to start to draw and right click to undo last drawing
+
 #### To exit press q, ESC or CapsLock
 
 ## Notes
