@@ -21,24 +21,20 @@ pincel
 ```bash
 pincel -g
 ```
-### Switch color
-press number keys:
+## Controls
 
-  1 - red
-  <!-- blank line -->
-  2 - blue
-  <!-- blank line -->
-  3 - yellow
-  <!-- blank line -->
-  4 - green
-  <!-- blank line -->
-  5 - orange
-  <!-- blank line -->
-  6 - black
-
-#### left click to start to draw and right click to undo last drawing
-
-#### To exit press q, ESC or CapsLock
+| Control                                              | Description                                                   |
+|------------------------------------------------------|---------------------------------------------------------------|
+| <kbd>q</kbd> or <kbd>ESC</kbd> or <kbd>Casplock</kbd>| Quit the application.                                         |
+| Drag with left mouse button                          | Draw lines.                                                   |
+| Click with right mouse button                        | Undo last drawing.                                            |
+| <kbd>p</kbd>                                         | PrintScreen.                                                  |
+| <kbd>1</kbd>                                         | Change brush color to red.                                    |
+| <kbd>2</kbd>                                         | Change brush color to blue.                                   |
+| <kbd>3</kbd>                                         | Change brush color to yellow.                                 |
+| <kbd>4</kbd>                                         | Change brush color to green.                                  |
+| <kbd>5</kbd>                                         | Change brush color to orange.                                 |
+| <kbd>6</kbd>                                         | Change brush color to black.                                  |
 
 ## Notes
 
