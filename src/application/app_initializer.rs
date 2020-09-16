@@ -100,6 +100,7 @@ pub fn init() -> Result<Application<impl Connection + Send + Sync>, PincelError>
         gc_id,
         brush_color,
         conn,
+        screen_num,
         skip_frame: false,
         current,
         atoms,

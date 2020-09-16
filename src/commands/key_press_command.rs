@@ -17,7 +17,6 @@ impl<'c, C: Connection + Send + Sync> KeyPressCommand<'c, C> {
 
 impl<C: Connection + Send + Sync> Command for KeyPressCommand<'_, C> {
     fn execute(&mut self) -> Result<(), PincelError> {
-        self.event.key_press_handler();
-        Ok(())
+        self.event.key_press_handler()
     }
 }

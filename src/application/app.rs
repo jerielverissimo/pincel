@@ -16,6 +16,7 @@ pub struct Application<C> {
     pub stack: Vec<Option<Movement>>,
     pub brush_color: CurrentColorSingleton,
     pub conn: C,
+    pub screen_num: usize,
     pub win_id: u32,
     pub gc_id: u32,
     pub current: usize,
