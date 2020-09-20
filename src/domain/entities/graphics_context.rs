@@ -1,5 +1,5 @@
-use x11rb::{connection::Connection, protocol::xproto::*};
 use crate::domain::error::PincelError;
+use x11rb::{connection::Connection, protocol::xproto::*};
 
 pub struct GraphicContext;
 

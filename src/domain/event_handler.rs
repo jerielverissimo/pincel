@@ -3,6 +3,7 @@ use std::slice;
 use super::error::PincelError;
 use crate::application::app::Application;
 use crate::domain::*;
+use chrono::prelude::*;
 use image::RgbImage;
 use x11::xlib;
 use x11rb::{
@@ -22,7 +23,7 @@ struct Bgr {
 const LEFT_MOUSE_BUTTON: u8 = 1;
 const RIGHT_MOUSE_BUTTON: u8 = 3;
 // TODO: get path from config file
-const SCREEN_SHOT_PATH: &str = "Pictures/screen_shot.png";
+const SCREENSHOT_DIR: &str = "Pictures/";
 
 pub struct EventHandler<'c, C>
 where
@@ -38,11 +39,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
             match e.detail.into() {
                 Q | CapsLock | Esc => self.exit(),
                 One | Two | Three | Four | Five | Six => self.switch_color(e.detail.into()),
-                P => {
-                    let home = std::env::home_dir()?;
-                    let path = home.join(std::path::PathBuf::from(SCREEN_SHOT_PATH));
-                    self.copy_desktop_image(path.to_str()?);
-                }
+                P => self.save_screenshot()?,
                 _ => {}
             }
         }
@@ -83,7 +80,6 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
 
     pub fn right_click(&mut self) -> Result<(), PincelError> {
         if let Event::ButtonPress(event) = self.event {
-            // right button
             if event.detail == RIGHT_MOUSE_BUTTON {
                 if self.app.stack.is_empty() {
                     self.app.skip();
@@ -198,5 +194,21 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
             xlib::XDestroyImage(image);
             xlib::XCloseDisplay(dis);
         }
+    }
+
+    fn save_screenshot(&self) -> Result<(), PincelError> {
+        #[allow(deprecated)]
+        let home = std::env::home_dir()?;
+        let current_date_time: String = Utc::now()
+            .to_string()
+            .split('.')
+            .into_iter()
+            .collect::<Vec<&str>>()[0]
+            .to_string();
+        let path = home.join(std::path::PathBuf::from(
+            SCREENSHOT_DIR.to_owned() + "Screenshot from " + &current_date_time + ".png",
+        ));
+        self.copy_desktop_image(path.to_str()?);
+        Ok(())
     }
 }
