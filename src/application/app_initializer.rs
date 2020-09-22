@@ -1,4 +1,4 @@
-use super::{app::Application, cli::Cli};
+use super::{app::Application, cli::Cli, config::Config};
 use crate::{domain::*, gui::window_builder::WindowBuilder};
 
 use x11rb::wrapper::ConnectionExt as _;
@@ -105,6 +105,7 @@ pub fn init() -> Result<Application<impl Connection + Send + Sync>, PincelError>
         current,
         atoms,
         cli: Cli::new(),
+        config: Config::new(),
     };
     Ok(app)
 }

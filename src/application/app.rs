@@ -22,6 +22,7 @@ pub struct Application<C> {
     pub current: usize,
     pub atoms: AtomCollection,
     pub cli: Cli,
+    pub config: Config,
 }
 
 impl<C: Connection + Send + Sync> Application<C> {

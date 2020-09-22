@@ -22,8 +22,6 @@ struct Bgr {
 
 const LEFT_MOUSE_BUTTON: u8 = 1;
 const RIGHT_MOUSE_BUTTON: u8 = 3;
-// TODO: get path from config file
-const SCREENSHOT_DIR: &str = "Pictures/";
 
 pub struct EventHandler<'c, C>
 where
@@ -180,7 +178,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
 
     fn copy_desktop_image(&self, path: &str) {
         unsafe {
-            let dis = xlib::XOpenDisplay(0 as *const i8);
+            let dis = xlib::XOpenDisplay(std::ptr::null::<i8>());
             let scr = xlib::XDefaultScreenOfDisplay(dis);
             let drawable = xlib::XDefaultRootWindow(dis);
             let w = (*scr).width as u32;
@@ -205,10 +203,16 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
             .into_iter()
             .collect::<Vec<&str>>()[0]
             .to_string();
-        let path = home.join(std::path::PathBuf::from(
-            SCREENSHOT_DIR.to_owned() + "Screenshot from " + &current_date_time + ".png",
-        ));
+
+        let path_str = self.app.config.screenshot_dir.as_str().to_owned()
+            + "Screenshot from "
+            + &current_date_time
+            + ".png";
+
+        let path = home.join(std::path::PathBuf::from(path_str));
+
         self.copy_desktop_image(path.to_str()?);
+
         Ok(())
     }
 }
