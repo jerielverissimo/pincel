@@ -17,10 +17,6 @@ cargo install --path .
 ```bash
 pincel
 ```
-#### With gui option
-```bash
-pincel -g
-```
 ## Controls
 
 | Control                                              | Description                                                   |
