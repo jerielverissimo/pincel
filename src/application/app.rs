@@ -27,7 +27,6 @@ pub struct Application<C> {
 
 impl<C: Connection + Send + Sync> Application<C> {
     pub fn run(&mut self) -> Result<(), PincelError> {
-        self.cli.toggle_gui();
         while self.is_running {
             self.reset_frame();
             let event = self.conn.wait_for_event()?;

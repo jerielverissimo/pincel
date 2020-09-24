@@ -12,10 +12,6 @@ edition = "2018"
 x11rb = "0.6.0"
 x11 = { version = "2.18.2", features = ["xlib"]  }
 image = "0.23.8"
-gtk = "0.9.1"
-gio = "0.9.0"
-gdk = "0.13.0"
-cairo-rs = "0.9.1"
 chrono = "0.4.15"
 
 [profile.release]
