@@ -3,18 +3,20 @@ use x11rb::{connection::Connection, protocol::xproto::*};
 
 pub struct GraphicContext;
 
+const LINE_WIDTH: u32 = 1;
+
 impl GraphicContext {
     pub fn create_gc(color: u32) -> CreateGCAux {
         CreateGCAux::new()
             .foreground(color)
-            .graphics_exposures(1)
-            .line_width(1)
+            .graphics_exposures(LINE_WIDTH)
+            .line_width(LINE_WIDTH)
     }
     pub fn change_color(color: u32) -> ChangeGCAux {
         ChangeGCAux::new()
             .foreground(color)
-            .graphics_exposures(1)
-            .line_width(1)
+            .graphics_exposures(LINE_WIDTH)
+            .line_width(LINE_WIDTH)
     }
     pub fn fetch_visual_alpha(depths: &[Depth]) -> Result<Visualtype, PincelError> {
         let mut alpha_depths = depths

@@ -114,6 +114,10 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
     }
 
     pub fn moving(&mut self) -> Result<(), PincelError> {
+        if self.app.stack.is_empty() {
+            return Ok(());
+        }
+
         if let Event::MotionNotify(event) = self.event {
             if let Some(current) = &mut self.app.stack[self.app.current] {
                 current.motion(

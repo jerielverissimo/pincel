@@ -126,7 +126,6 @@ impl Movement {
         self.motion(conn, win, gc, (ev.event_x, ev.event_y, ev.time))?;
 
         if self.lines.len() > 1 {
-            //self.last = Some(Rhomboid::new(ev, conn, win, gc));
             self.left = i16::min(ev.event_x - PADDING, self.left);
             self.right = i16::max(ev.event_x + PADDING, self.right);
             self.top = i16::min(ev.event_y - PADDING, self.top);
@@ -143,8 +142,6 @@ impl Movement {
         // redraw on the last Expose in every batch
 
         if ev.count == 0 {
-            //self.first.draw(conn, win, gc);
-
             // Redraw all the lines
             poly_line(conn, CoordMode::Origin, win, gc, &self.points()).unwrap();
         }
