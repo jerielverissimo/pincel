@@ -16,7 +16,7 @@ impl<'c, C: Connection + Send + Sync> DrawCommand<'c, C> {
 }
 
 impl<C: Connection + Send + Sync> Command for DrawCommand<'_, C> {
-    fn execute(&mut self) -> Result<(), PincelError> {
+    fn execute(&mut self) -> Result {
         self.event.draw()?;
         Ok(())
     }

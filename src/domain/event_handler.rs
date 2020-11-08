@@ -1,6 +1,5 @@
 use std::slice;
 
-use super::error::PincelError;
 use crate::application::app::Application;
 use crate::domain::*;
 use chrono::prelude::*;
@@ -32,7 +31,7 @@ where
 }
 
 impl<C: Connection + Send + Sync> EventHandler<'_, C> {
-    pub fn key_press_handler(&mut self) -> Result<(), PincelError> {
+    pub fn key_press_handler(&mut self) -> Result {
         if let Event::KeyPress(e) = self.event {
             match e.detail.into() {
                 Q | CapsLock | Esc => self.exit(),
@@ -48,7 +47,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
         self.app.is_running = false;
     }
 
-    pub fn draw(&self) -> Result<(), PincelError> {
+    pub fn draw(&self) -> Result {
         if let Event::Expose(e) = self.event {
             for mov in &self.app.stack {
                 if let Some(mov) = &mov {
@@ -61,7 +60,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
         Ok(())
     }
 
-    pub fn left_click(&mut self) -> Result<(), PincelError> {
+    pub fn left_click(&mut self) -> Result {
         if let Event::ButtonPress(event) = self.event {
             if event.detail == LEFT_MOUSE_BUTTON {
                 self.uptate_color(None)?;
@@ -76,7 +75,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
         Ok(())
     }
 
-    pub fn right_click(&mut self) -> Result<(), PincelError> {
+    pub fn right_click(&mut self) -> Result {
         if let Event::ButtonPress(event) = self.event {
             if event.detail == RIGHT_MOUSE_BUTTON {
                 if self.app.stack.is_empty() {
@@ -99,7 +98,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
         Ok(())
     }
 
-    pub fn left_release(&mut self) -> Result<(), PincelError> {
+    pub fn left_release(&mut self) -> Result {
         if let Event::ButtonRelease(event) = self.event {
             if event.detail == LEFT_MOUSE_BUTTON {
                 self.app.stack[self.app.current].as_mut()?.finish(
@@ -113,7 +112,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
         Ok(())
     }
 
-    pub fn moving(&mut self) -> Result<(), PincelError> {
+    pub fn moving(&mut self) -> Result {
         if self.app.stack.is_empty() {
             return Ok(());
         }
@@ -131,7 +130,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
         Ok(())
     }
 
-    fn uptate_color(&self, with_color: Option<CurrentColor>) -> Result<(), PincelError> {
+    fn uptate_color(&self, with_color: Option<CurrentColor>) -> Result {
         let new_gc;
         if let Some(color) = with_color {
             new_gc = GraphicContext::change_color(color.value());
@@ -198,7 +197,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
         }
     }
 
-    fn save_screenshot(&self) -> Result<(), PincelError> {
+    fn save_screenshot(&self) -> Result {
         #[allow(deprecated)]
         let home = std::env::home_dir()?;
         let current_date_time: String = Utc::now()

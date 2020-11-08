@@ -12,12 +12,14 @@ impl GraphicContext {
             .graphics_exposures(LINE_WIDTH)
             .line_width(LINE_WIDTH)
     }
+
     pub fn change_color(color: u32) -> ChangeGCAux {
         ChangeGCAux::new()
             .foreground(color)
             .graphics_exposures(LINE_WIDTH)
             .line_width(LINE_WIDTH)
     }
+
     pub fn fetch_visual_alpha(depths: &[Depth]) -> Result<Visualtype, PincelError> {
         let mut alpha_depths = depths
             .iter()

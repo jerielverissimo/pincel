@@ -7,6 +7,8 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::option::NoneError;
 
+pub type Result = std::result::Result<(), PincelError>;
+
 #[derive(Debug)]
 pub enum PincelError {
     MissingWinParams,

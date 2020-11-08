@@ -16,7 +16,7 @@ impl<'c, C: Connection + Send + Sync> LeftReleaseCommand<'c, C> {
 }
 
 impl<C: Connection + Send + Sync> Command for LeftReleaseCommand<'_, C> {
-    fn execute(&mut self) -> Result<(), PincelError> {
+    fn execute(&mut self) -> Result {
         self.event.left_release()?;
         Ok(())
     }

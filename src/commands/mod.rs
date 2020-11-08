@@ -8,7 +8,7 @@ use x11rb::{
 };
 
 pub trait Command {
-    fn execute(&mut self) -> Result<(), PincelError>;
+    fn execute(&mut self) -> Result;
 }
 
 pub mod draw_command;

@@ -19,7 +19,7 @@ atom_manager! {
     }
 }
 
-pub fn init() -> Result<Application<impl Connection + Send + Sync>, PincelError> {
+pub fn init() -> std::result::Result<Application<impl Connection + Send + Sync>, PincelError> {
     let (conn, screen_num) = x11rb::connect(None)?;
 
     let screen = &conn.setup().roots[screen_num];

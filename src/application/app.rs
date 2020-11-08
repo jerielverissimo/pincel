@@ -26,7 +26,7 @@ pub struct Application<C> {
 }
 
 impl<C: Connection + Send + Sync> Application<C> {
-    pub fn run(&mut self) -> Result<(), PincelError> {
+    pub fn run(&mut self) -> Result {
         while self.is_running {
             self.reset_frame();
             let event = self.conn.wait_for_event()?;
@@ -46,7 +46,7 @@ impl<C: Connection + Send + Sync> Application<C> {
         self.skip_frame = true;
     }
 
-    pub fn dispatch(&mut self, event: Event) -> Result<(), PincelError> {
+    pub fn dispatch(&mut self, event: Event) -> Result {
         match event {
             Event::KeyPress(e) => self.handle_key_press(e)?,
             Event::Expose(e) => self.handle_expose(e)?,
@@ -61,17 +61,17 @@ impl<C: Connection + Send + Sync> Application<C> {
         Ok(())
     }
 
-    fn handle_key_press(&mut self, e: KeyPressEvent) -> Result<(), PincelError> {
+    fn handle_key_press(&mut self, e: KeyPressEvent) -> Result {
         KeyPressCommand::new(self, e).execute()?;
         Ok(())
     }
 
-    fn handle_expose(&mut self, e: ExposeEvent) -> Result<(), PincelError> {
+    fn handle_expose(&mut self, e: ExposeEvent) -> Result {
         DrawCommand::new(self, e).execute()?;
         Ok(())
     }
 
-    fn handle_button_press(&mut self, e: ButtonPressEvent) -> Result<(), PincelError> {
+    fn handle_button_press(&mut self, e: ButtonPressEvent) -> Result {
         self.conn
             .set_input_focus(InputFocus::None, self.win_id, CURRENT_TIME)?;
         LeftClickCommand::new(self, e).execute()?;
@@ -79,7 +79,7 @@ impl<C: Connection + Send + Sync> Application<C> {
         Ok(())
     }
 
-    fn handle_button_release(&mut self, e: ButtonReleaseEvent) -> Result<(), PincelError> {
+    fn handle_button_release(&mut self, e: ButtonReleaseEvent) -> Result {
         if self.stack.is_empty() {
             self.skip();
         }
@@ -87,7 +87,7 @@ impl<C: Connection + Send + Sync> Application<C> {
         Ok(())
     }
 
-    fn handle_motion_notify(&mut self, e: MotionNotifyEvent) -> Result<(), PincelError> {
+    fn handle_motion_notify(&mut self, e: MotionNotifyEvent) -> Result {
         if self.stack.is_empty() {
             self.skip();
         }
@@ -95,13 +95,13 @@ impl<C: Connection + Send + Sync> Application<C> {
         Ok(())
     }
 
-    fn handle_enter_notify(&mut self, _: EnterNotifyEvent) -> Result<(), PincelError> {
+    fn handle_enter_notify(&mut self, _: EnterNotifyEvent) -> Result {
         self.conn
             .set_input_focus(InputFocus::None, self.win_id, CURRENT_TIME)?;
         Ok(())
     }
 
-    fn handle_client_message(&mut self, event: ClientMessageEvent) -> Result<(), PincelError> {
+    fn handle_client_message(&mut self, event: ClientMessageEvent) -> Result {
         let data = event.data.as_data32();
         if event.format == 32
             && event.window == self.win_id

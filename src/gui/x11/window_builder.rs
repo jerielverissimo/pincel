@@ -1,4 +1,4 @@
-use crate::domain::error::PincelError;
+use crate::domain::error::Result;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::*;
 
@@ -25,7 +25,7 @@ impl<'wp> WindowBuilder<'wp> {
             win_params: None,
         }
     }
-    pub fn build(&self, conn: &(impl Connection + Send + Sync)) -> Result<(), PincelError> {
+    pub fn build(&self, conn: &(impl Connection + Send + Sync)) -> Result {
         let (win_start_x, win_start_y) = self.pos;
         let (width, height) = self.size;
         conn.create_window(
