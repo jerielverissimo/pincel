@@ -1,12 +1,18 @@
-use super::*;
-use crate::commands::*;
+use super::{app_initializer, cli, Config};
+use crate::commands::{
+    Command, DrawCommand, KeyPressCommand, LeftClickCommand, LeftReleaseCommand, MotionCommand,
+    RightClickCommand,
+};
 use crate::domain::error::PincelError;
-use crate::domain::*;
-use app_initializer::*;
+use crate::domain::{entities, Result};
+use app_initializer::AtomCollection;
 use cli::Cli;
 use entities::{color::CurrentColorSingleton, movement::Movement};
 use x11rb::connection::Connection;
-use x11rb::protocol::xproto::*;
+use x11rb::protocol::xproto::{
+    ButtonPressEvent, ButtonReleaseEvent, ClientMessageEvent, ConnectionExt, EnterNotifyEvent,
+    ExposeEvent, InputFocus, KeyPressEvent, MotionNotifyEvent,
+};
 use x11rb::protocol::Event;
 use x11rb::CURRENT_TIME;
 

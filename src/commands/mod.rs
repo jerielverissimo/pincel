@@ -1,10 +1,15 @@
-use super::*;
+use super::{app, event_handler, Result};
 
 use app::Application;
 use event_handler::EventHandler;
 use x11rb::{
     connection::Connection,
-    protocol::{xproto::*, Event},
+    protocol::{
+        xproto::{
+            ButtonPressEvent, ButtonReleaseEvent, ExposeEvent, KeyPressEvent, MotionNotifyEvent,
+        },
+        Event,
+    },
 };
 
 pub trait Command {

@@ -1,4 +1,4 @@
-use super::*;
+use super::{Application, ButtonReleaseEvent, Command, Connection, Event, EventHandler, Result};
 
 pub struct LeftReleaseCommand<'c, C: Connection + Send + Sync> {
     event: EventHandler<'c, C>,

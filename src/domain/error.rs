@@ -23,13 +23,13 @@ pub enum PincelError {
 impl Display for PincelError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::MissingWinParams => write!(f, "Missing window param!!!"),
-            Self::ConnectionError(err) => write!(f, "Error: {:?}", err),
-            Self::ReplyOrIdError(err) => write!(f, "Error: {:?}", err),
-            Self::ReplyError(err) => write!(f, "Error: {:?}", err),
-            Self::ConnectError(err) => write!(f, "Error: {:?}", err),
-            Self::XlibError(err) => write!(f, "Error: {:?}", err),
-            Self::GenericError(err) => write!(f, "Error: {:?}", err),
+            Self::MissingWinParams => return write!(f, "Missing window param!!!"),
+            Self::ConnectionError(err) => return write!(f, "Error: {:?}", err),
+            Self::ReplyOrIdError(err) => return write!(f, "Error: {:?}", err),
+            Self::ReplyError(err) => return write!(f, "Error: {:?}", err),
+            Self::ConnectError(err) => return write!(f, "Error: {:?}", err),
+            Self::XlibError(err) => return write!(f, "Error: {:?}", err),
+            Self::GenericError(err) => return write!(f, "Error: {:?}", err),
         }
     }
 }

@@ -1,4 +1,4 @@
-use super::*;
+use super::{Application, ButtonPressEvent, Command, Connection, Event, EventHandler, Result};
 
 pub struct RightClickCommand<'c, C: Connection + Send + Sync> {
     event: EventHandler<'c, C>,

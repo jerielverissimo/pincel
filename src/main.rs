@@ -7,8 +7,8 @@ mod commands;
 mod domain;
 mod gui;
 
-use application::*;
-use domain::*;
+use application::{app, app_initializer};
+use domain::{event_handler, Result};
 
 fn main() -> Result {
     let mut app = app_initializer::init()?;

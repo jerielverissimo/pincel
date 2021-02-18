@@ -1,15 +1,15 @@
 use std::slice;
 
 use crate::application::app::Application;
-use crate::domain::*;
+use crate::domain::{CurrentColor, CurrentColorSingleton, GraphicContext, Keys, Movement, Result};
 use chrono::prelude::*;
 use image::RgbImage;
 use x11::xlib;
 use x11rb::{
-    connection::*,
-    protocol::{xproto::*, Event},
+    connection::Connection,
+    protocol::{xproto::ConnectionExt, Event},
 };
-use Keys::*;
+use Keys::{CapsLock, Esc, Five, Four, One, Six, Three, Two, P, Q};
 
 #[derive(Debug)]
 struct Bgr {

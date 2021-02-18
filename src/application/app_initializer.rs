@@ -1,10 +1,13 @@
 use super::{app::Application, cli::Cli, config::Config};
-use crate::{domain::*, gui::window_builder::WindowBuilder};
+use crate::{
+    domain::{CurrentColorSingleton, GraphicContext, Movement, PincelError},
+    gui::window_builder::WindowBuilder,
+};
 
 use x11rb::wrapper::ConnectionExt as _;
 
 use x11rb::connection::Connection;
-use x11rb::protocol::xproto::*;
+use x11rb::protocol::xproto::{free_colormap, AtomEnum, ConnectionExt, InputFocus, PropMode};
 use x11rb::{atom_manager, CURRENT_TIME};
 
 // A collection of the atoms we will need.
@@ -39,8 +42,8 @@ pub fn init() -> std::result::Result<Application<impl Connection + Send + Sync>,
     let colormap = GraphicContext::genarate_colormap(&conn, screen, &visual)?;
 
     let (width, height) = (
-        (screen.width_in_pixels as f32) as u16,
-        (screen.height_in_pixels as f32) as u16,
+        f32::from(screen.width_in_pixels) as u16,
+        f32::from(screen.height_in_pixels) as u16,
     );
 
     WindowBuilder::new()

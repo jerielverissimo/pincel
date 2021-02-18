@@ -1,6 +1,8 @@
 use crate::domain::error::Result;
 use x11rb::connection::Connection;
-use x11rb::protocol::xproto::*;
+use x11rb::protocol::xproto::{
+    ConnectionExt, CreateWindowAux, EventMask, Screen, Visualtype, WindowClass,
+};
 
 const BLACK: u32 = 0x00;
 const TRUE: u32 = 1;

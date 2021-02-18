@@ -1,7 +1,10 @@
 use super::color::CurrentColor;
 
 use x11rb::connection::Connection;
-use x11rb::protocol::xproto::*;
+use x11rb::protocol::xproto::{
+    get_motion_events, poly_line, ButtonPressEvent, ButtonReleaseEvent, ConnectionExt, CoordMode,
+    ExposeEvent, Point,
+};
 
 use std::error::Error;
 

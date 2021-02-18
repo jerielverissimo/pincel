@@ -1,4 +1,4 @@
-use super::*;
+use super::{Application, Command, Connection, Event, EventHandler, KeyPressEvent, Result};
 
 pub struct KeyPressCommand<'c, C: Connection + Send + Sync> {
     event: EventHandler<'c, C>,

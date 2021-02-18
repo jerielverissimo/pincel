@@ -1,4 +1,4 @@
-use super::*;
+use super::{Application, Command, Connection, Event, EventHandler, MotionNotifyEvent, Result};
 
 pub struct MotionCommand<'c, C: Connection + Send + Sync> {
     event: EventHandler<'c, C>,
