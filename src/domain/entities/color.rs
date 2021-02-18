@@ -47,12 +47,12 @@ pub enum CurrentColor {
 impl CurrentColor {
     pub fn value(&self) -> u32 {
         match self {
-            CurrentColor::Red => 0xffff3c3c,
-            CurrentColor::Blue => 0xff1e6ec8,
-            CurrentColor::Yellow => 0xffebb437,
-            CurrentColor::Green => 0xff78af46,
-            CurrentColor::Orange => 0xffeb7d0f,
-            CurrentColor::Black => 0xff242424,
+            CurrentColor::Red => 0xffff_3c3c,
+            CurrentColor::Blue => 0xff1e_6ec8,
+            CurrentColor::Yellow => 0xffeb_b437,
+            CurrentColor::Green => 0xff78_af46,
+            CurrentColor::Orange => 0xffeb_7d0f,
+            CurrentColor::Black => 0xff24_2424,
             CurrentColor::NotSupported => 0x00,
         }
     }

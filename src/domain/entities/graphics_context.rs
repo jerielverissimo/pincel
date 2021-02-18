@@ -28,7 +28,7 @@ impl GraphicContext {
     pub fn fetch_visual_alpha(depths: &[Depth]) -> Result<Visualtype, PincelError> {
         let mut alpha_depths = depths
             .iter()
-            .filter(|d: &&Depth| d.depth == 32u8)
+            .filter(|d: &&Depth| d.depth == 32_u8)
             .peekable();
         if alpha_depths.peek().is_none() {
             panic!("Alpha channel not found!");
