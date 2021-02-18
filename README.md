@@ -24,6 +24,7 @@ pincel
 | <kbd>q</kbd> or <kbd>ESC</kbd> or <kbd>Casplock</kbd>| Quit the application.                                         |
 | Drag with left mouse button                          | Draw lines.                                                   |
 | Click with right mouse button                        | Undo last drawing.                                            |
+| Click with middle mouse button                       | Clear all draws.                                            |
 | <kbd>p</kbd>                                         | PrintScreen.                                                  |
 | <kbd>1</kbd>                                         | Change brush color to red.                                    |
 | <kbd>2</kbd>                                         | Change brush color to blue.                                   |

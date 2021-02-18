@@ -20,6 +20,7 @@ struct Bgr {
 }
 
 const LEFT_MOUSE_BUTTON: u8 = 1;
+const MIDDLE_MOUSE_BUTTON: u8 = 2;
 const RIGHT_MOUSE_BUTTON: u8 = 3;
 
 pub struct EventHandler<'c, C>
@@ -56,6 +57,24 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
                 }
             }
             self.app.conn.flush()?;
+        }
+        Ok(())
+    }
+
+    pub fn clear_all_draws(&mut self) -> Result {
+        if let Event::ButtonPress(event) = self.event {
+            if event.detail == MIDDLE_MOUSE_BUTTON {
+                for _ in 0..self.app.stack.len() {
+                    if !self.app.stack.is_empty() {
+                        self.app.stack.drain(..);
+                    }
+                }
+                self.app
+                    .conn
+                    .clear_area(true, self.app.win_id, 0, 0, 0, 0)?;
+                self.app.conn.flush()?;
+                self.app.skip();
+            }
         }
         Ok(())
     }

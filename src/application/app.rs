@@ -1,7 +1,7 @@
 use super::{app_initializer, cli, Config};
 use crate::commands::{
-    Command, DrawCommand, KeyPressCommand, LeftClickCommand, LeftReleaseCommand, MotionCommand,
-    RightClickCommand,
+    Command, DrawCommand, KeyPressCommand, LeftClickCommand, LeftReleaseCommand,
+    MiddleClickCommand, MotionCommand, RightClickCommand,
 };
 use crate::domain::error::PincelError;
 use crate::domain::{entities, Result};
@@ -36,6 +36,7 @@ impl<C: Connection + Send + Sync> Application<C> {
         while self.is_running {
             self.reset_frame();
             let event = self.conn.wait_for_event()?;
+            // FIXME: handle input focus lost
             self.dispatch(event)?;
             if self.skip_frame {
                 continue;
@@ -79,8 +80,9 @@ impl<C: Connection + Send + Sync> Application<C> {
 
     fn handle_button_press(&mut self, e: ButtonPressEvent) -> Result {
         self.conn
-            .set_input_focus(InputFocus::None, self.win_id, CURRENT_TIME)?;
+            .set_input_focus(InputFocus::Parent, self.win_id, CURRENT_TIME)?;
         LeftClickCommand::new(self, e).execute()?;
+        MiddleClickCommand::new(self, e).execute()?;
         RightClickCommand::new(self, e).execute()?;
         Ok(())
     }
@@ -103,7 +105,7 @@ impl<C: Connection + Send + Sync> Application<C> {
 
     fn handle_enter_notify(&mut self, _: EnterNotifyEvent) -> Result {
         self.conn
-            .set_input_focus(InputFocus::None, self.win_id, CURRENT_TIME)?;
+            .set_input_focus(InputFocus::Parent, self.win_id, CURRENT_TIME)?;
         Ok(())
     }
 
