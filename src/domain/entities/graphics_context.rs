@@ -2,27 +2,33 @@ use crate::domain::error::PincelError;
 use x11rb::{
     connection::Connection,
     protocol::xproto::{
-        create_colormap, ChangeGCAux, ColormapAlloc, CreateGCAux, Depth, Screen, Visualtype,
+        create_colormap, ChangeGCAux, ColormapAlloc, CreateGCAux, Depth, Screen,
+        Visualtype,
     },
 };
 
 pub struct GraphicContext;
 
-const LINE_WIDTH: u32 = 1;
+#[derive(Clone, Copy)]
+pub enum LineWidth {
+    Thin = 1,
+    Normal = 2,
+    Wide = 3,
+}
 
 impl GraphicContext {
-    pub fn create_gc(color: u32) -> CreateGCAux {
+    pub fn create_gc(color: u32, line_width: LineWidth) -> CreateGCAux {
         CreateGCAux::new()
             .foreground(color)
-            .graphics_exposures(LINE_WIDTH)
-            .line_width(LINE_WIDTH)
+            .graphics_exposures(1)
+            .line_width(line_width as u32)
     }
 
-    pub fn change_color(color: u32) -> ChangeGCAux {
+    pub fn change_color(color: u32, line_width: LineWidth) -> ChangeGCAux {
         ChangeGCAux::new()
             .foreground(color)
-            .graphics_exposures(LINE_WIDTH)
-            .line_width(LINE_WIDTH)
+            .graphics_exposures(1)
+            .line_width(line_width as u32)
     }
 
     pub fn fetch_visual_alpha(depths: &[Depth]) -> Result<Visualtype, PincelError> {

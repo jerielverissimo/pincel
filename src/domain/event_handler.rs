@@ -11,6 +11,8 @@ use x11rb::{
 };
 use Keys::{CapsLock, Esc, Five, Four, One, Six, Three, Two, P, Q};
 
+use super::LineWidth;
+
 #[derive(Debug)]
 struct Bgr {
     b: u8,
@@ -22,6 +24,8 @@ struct Bgr {
 const LEFT_MOUSE_BUTTON: u8 = 1;
 const MIDDLE_MOUSE_BUTTON: u8 = 2;
 const RIGHT_MOUSE_BUTTON: u8 = 3;
+const SCROLL_WHEEL_UP: u8 = 4;
+const SCROLL_WHEEL_DOWN: u8 = 5;
 
 pub struct EventHandler<'c, C>
 where
@@ -69,11 +73,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
                         self.app.stack.drain(..);
                     }
                 }
-                self.app
-                    .conn
-                    .clear_area(true, self.app.win_id, 0, 0, 0, 0)?;
-                self.app.conn.flush()?;
-                self.app.skip();
+                self.update_screen()?;
             }
         }
         Ok(())
@@ -107,11 +107,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
                 } else {
                     0
                 };
-                self.app
-                    .conn
-                    .clear_area(true, self.app.win_id, 0, 0, 0, 0)?;
-                self.app.conn.flush()?;
-                self.app.skip();
+                self.update_screen()?;
             }
         }
         Ok(())
@@ -128,6 +124,53 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
                 )?;
             }
         }
+        Ok(())
+    }
+
+    pub fn scroll_wheel_up(&mut self) -> Result {
+        if let Event::ButtonPress(event) = self.event {
+            if event.detail == SCROLL_WHEEL_UP {
+                let width = &mut self.app.line_width;
+                match width {
+                    LineWidth::Thin => {
+                        *width = LineWidth::Normal;
+                    }
+                    LineWidth::Normal => {
+                        *width = LineWidth::Wide;
+                    }
+                    LineWidth::Wide => {}
+                }
+            }
+            self.update_screen()?;
+        }
+        Ok(())
+    }
+
+    pub fn scroll_wheel_down(&mut self) -> Result {
+        if let Event::ButtonPress(event) = self.event {
+            if event.detail == SCROLL_WHEEL_DOWN {
+                let width = &mut self.app.line_width;
+                match width {
+                    LineWidth::Thin => {}
+                    LineWidth::Normal => {
+                        *width = LineWidth::Thin;
+                    }
+                    LineWidth::Wide => {
+                        *width = LineWidth::Normal;
+                    }
+                }
+            }
+            self.update_screen();
+        }
+        Ok(())
+    }
+
+    fn update_screen(&mut self) -> Result {
+        self.app
+            .conn
+            .clear_area(true, self.app.win_id, 0, 0, 0, 0)?;
+        self.app.conn.flush()?;
+        self.app.skip();
         Ok(())
     }
 
@@ -152,9 +195,10 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
     fn update_color(&self, with_color: Option<CurrentColor>) -> Result {
         let new_gc;
         if let Some(color) = with_color {
-            new_gc = GraphicContext::change_color(color.value());
+            new_gc = GraphicContext::change_color(color.value(), self.app.line_width);
         } else {
-            new_gc = GraphicContext::change_color(self.app.brush_color.value());
+            new_gc =
+                GraphicContext::change_color(self.app.brush_color.value(), self.app.line_width);
         }
         self.app.conn.change_gc(self.app.gc_id, &new_gc)?;
 

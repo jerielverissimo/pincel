@@ -1,6 +1,6 @@
 use super::{app::Application, cli::Cli, config::Config};
 use crate::{
-    domain::{CurrentColorSingleton, GraphicContext, Movement, PincelError},
+    domain::{CurrentColorSingleton, GraphicContext, LineWidth, Movement, PincelError},
     gui::window_builder::WindowBuilder,
 };
 
@@ -57,7 +57,8 @@ pub fn init() -> std::result::Result<Application<impl Connection + Send + Sync>,
 
     let brush_color = CurrentColorSingleton::new();
 
-    let gc_aux = GraphicContext::create_gc(brush_color.value());
+    let line_width = LineWidth::Thin;
+    let gc_aux = GraphicContext::create_gc(brush_color.value(), line_width);
 
     free_colormap(&conn, colormap)?;
 
@@ -102,6 +103,7 @@ pub fn init() -> std::result::Result<Application<impl Connection + Send + Sync>,
         win_id,
         gc_id,
         brush_color,
+        line_width,
         conn,
         screen_num,
         skip_frame: false,

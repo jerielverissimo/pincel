@@ -25,6 +25,8 @@ pincel
 | Drag with left mouse button                          | Draw lines.                                                   |
 | Click with right mouse button                        | Undo last drawing.                                            |
 | Click with middle mouse button                       | Clear all draws.                                            |
+| Turn scroll wheel up                                 | Make line thicker.                                            |
+| Turn scroll wheel down                               | Make line thinner.                                            |
 | <kbd>p</kbd>                                         | PrintScreen.                                                  |
 | <kbd>1</kbd>                                         | Change brush color to red.                                    |
 | <kbd>2</kbd>                                         | Change brush color to blue.                                   |

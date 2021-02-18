@@ -1,13 +1,14 @@
 use super::{app_initializer, cli, Config};
 use crate::commands::{
     Command, DrawCommand, KeyPressCommand, LeftClickCommand, LeftReleaseCommand,
-    MiddleClickCommand, MotionCommand, RightClickCommand,
+    MiddleClickCommand, MotionCommand, RightClickCommand, ScrollWheelDownCommand,
+    ScrollWheelUpCommand,
 };
 use crate::domain::error::PincelError;
 use crate::domain::{entities, Result};
 use app_initializer::AtomCollection;
 use cli::Cli;
-use entities::{color::CurrentColorSingleton, movement::Movement};
+use entities::{color::CurrentColorSingleton, movement::Movement, LineWidth};
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::{
     ButtonPressEvent, ButtonReleaseEvent, ClientMessageEvent, ConnectionExt, EnterNotifyEvent,
@@ -21,6 +22,7 @@ pub struct Application<C> {
     pub skip_frame: bool,
     pub stack: Vec<Option<Movement>>,
     pub brush_color: CurrentColorSingleton,
+    pub line_width: LineWidth,
     pub conn: C,
     pub screen_num: usize,
     pub win_id: u32,
@@ -84,6 +86,8 @@ impl<C: Connection + Send + Sync> Application<C> {
         LeftClickCommand::new(self, e).execute()?;
         MiddleClickCommand::new(self, e).execute()?;
         RightClickCommand::new(self, e).execute()?;
+        ScrollWheelUpCommand::new(self, e).execute()?;
+        ScrollWheelDownCommand::new(self, e).execute()?;
         Ok(())
     }
 
