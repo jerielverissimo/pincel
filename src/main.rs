@@ -1,3 +1,5 @@
+#![warn(clippy::all, clippy::pedantic, clippy::restriction)]
+#![allow(clippy::missing_docs_in_private_items)]
 #![feature(try_trait)]
 
 mod application;
