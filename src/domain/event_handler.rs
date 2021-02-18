@@ -51,7 +51,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
         if let Event::Expose(e) = self.event {
             for mov in &self.app.stack {
                 if let Some(mov) = &mov {
-                    self.uptate_color(Some(mov.color))?;
+                    self.update_color(Some(mov.color))?;
                     mov.expose(&self.app.conn, self.app.win_id, self.app.gc_id, &e);
                 }
             }
@@ -63,7 +63,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
     pub fn left_click(&mut self) -> Result {
         if let Event::ButtonPress(event) = self.event {
             if event.detail == LEFT_MOUSE_BUTTON {
-                self.uptate_color(None)?;
+                self.update_color(None)?;
 
                 let temp = Some(Movement::new(event, self.app.brush_color.clone().into()));
                 self.app.stack.push(temp);
@@ -130,7 +130,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
         Ok(())
     }
 
-    fn uptate_color(&self, with_color: Option<CurrentColor>) -> Result {
+    fn update_color(&self, with_color: Option<CurrentColor>) -> Result {
         let new_gc;
         if let Some(color) = with_color {
             new_gc = GraphicContext::change_color(color.value());
