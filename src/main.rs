@@ -7,7 +7,6 @@
     clippy::wildcard_enum_match_arm,
     clippy::else_if_without_else
 )]
-#![feature(try_trait)]
 
 mod application;
 mod commands;

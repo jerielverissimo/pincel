@@ -116,12 +116,11 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
     pub fn left_release(&mut self) -> Result {
         if let Event::ButtonRelease(event) = self.event {
             if event.detail == LEFT_MOUSE_BUTTON {
-                self.app.stack[self.app.current].as_mut()?.finish(
-                    &self.app.conn,
-                    self.app.win_id,
-                    self.app.gc_id,
-                    &event,
-                )?;
+                self.app.stack[self.app.current]
+                    .as_mut()
+                    .unwrap()
+                    .finish(&self.app.conn, self.app.win_id, self.app.gc_id, &event)
+                    .unwrap();
             }
         }
         Ok(())
@@ -261,8 +260,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
     }
 
     fn save_screenshot(&self) -> Result {
-        #[allow(deprecated)]
-        let home = std::env::home_dir()?;
+        let home = std::env::home_dir().unwrap();
         let current_date_time: String = Utc::now()
             .to_string()
             .split('.')
@@ -277,7 +275,7 @@ impl<C: Connection + Send + Sync> EventHandler<'_, C> {
 
         let path = home.join(std::path::PathBuf::from(path_str));
 
-        self.copy_desktop_image(path.to_str()?);
+        self.copy_desktop_image(path.to_str().unwrap());
 
         Ok(())
     }

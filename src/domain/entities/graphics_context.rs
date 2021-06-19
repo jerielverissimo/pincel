@@ -2,8 +2,7 @@ use crate::domain::error::PincelError;
 use x11rb::{
     connection::Connection,
     protocol::xproto::{
-        create_colormap, ChangeGCAux, ColormapAlloc, CreateGCAux, Depth, Screen,
-        Visualtype,
+        create_colormap, ChangeGCAux, ColormapAlloc, CreateGCAux, Depth, Screen, Visualtype,
     },
 };
 
@@ -39,7 +38,7 @@ impl GraphicContext {
         if alpha_depths.peek().is_none() {
             panic!("Alpha channel not found!");
         }
-        return Ok(*alpha_depths.next()?.visuals.get(1)?);
+        return Ok(*alpha_depths.next().unwrap().visuals.get(1).unwrap());
     }
 
     pub fn genarate_colormap(

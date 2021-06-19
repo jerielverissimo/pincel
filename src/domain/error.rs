@@ -5,7 +5,6 @@ use x11rb::{
 
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use std::option::NoneError;
 
 pub type Result = std::result::Result<(), PincelError>;
 
@@ -39,12 +38,6 @@ impl Error for PincelError {}
 impl From<Box<dyn Error>> for PincelError {
     fn from(e: Box<dyn Error>) -> Self {
         Self::GenericError(e)
-    }
-}
-
-impl From<NoneError> for PincelError {
-    fn from(_: NoneError) -> Self {
-        PincelError::MissingWinParams
     }
 }
 

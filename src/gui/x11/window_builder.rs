@@ -33,16 +33,17 @@ impl<'wp> WindowBuilder<'wp> {
         conn.create_window(
             32,
             self.win_id,
-            self.screen?.root,
+            self.screen.unwrap().root,
             *win_start_x,
             *win_start_y,
             *width,
             *height,
             0,
             WindowClass::InputOutput,
-            self.visual?.visual_id,
-            &self.win_params?,
-        )?;
+            self.visual.unwrap().visual_id,
+            &self.win_params.unwrap(),
+        )
+        .unwrap();
         Ok(())
     }
     pub fn with_win_id(&mut self, id: u32) -> &mut Self {
