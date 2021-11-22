@@ -3,6 +3,7 @@ use std::{any::Any, rc::Rc};
 use num::FromPrimitive;
 
 use super::{
+    clock::Clock,
     event::{ChannelSender, Data, EventContext, EventSystem, Listener, Message, SystemEventCode},
     input::{InputState, Keys},
     platform::{Backend, Platform, PlatformState},
@@ -31,7 +32,7 @@ pub struct ApplicationState {
     platform: PlatformState,
     width: u16,
     height: u16,
-    // clock: Clock,
+    clock: Clock,
     last_time: f64,
     input: InputState,
     event_system: EventSystem,
@@ -80,6 +81,10 @@ impl ApplicationState {
                 last_time: 0.0,
                 input,
                 event_system,
+                clock: Clock {
+                    start_time: 0.0,
+                    elapsed: 0.0,
+                },
             });
         }
     }
@@ -87,6 +92,12 @@ impl ApplicationState {
     pub fn run() {
         unsafe {
             if let Some(ref mut state) = APP_STATE {
+                state.clock.start();
+                state.clock.update();
+                let running_time = 0;
+                let frame_count = 0;
+                let target_frame_seconds = 1.0 / 60.0;
+
                 while state.is_running {
                     let channel = &state.event_system.channel;
                     if !state.platform.pump_messages(state.input, channel.sender()) {
@@ -94,6 +105,11 @@ impl ApplicationState {
                     }
 
                     if !state.is_suspended {
+                        // Update clock and get delta time.
+                        state.clock.update();
+                        let current_time = state.clock.elapsed;
+                        let delta = current_time - state.last_time;
+                        let frame_start_time = Clock::get_absolute_time();
                         state.event_system.listen_messages();
                     }
                 }

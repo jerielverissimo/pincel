@@ -1,4 +1,5 @@
 pub mod application;
+pub mod clock;
 pub mod event;
 pub mod input;
 pub mod platform;
