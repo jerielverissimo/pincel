@@ -1,36 +1,78 @@
 use std::sync::Arc;
 
-use x11::{
-    keysym::*,
-    xlib::{Display, KeyCode, ShiftMask, XOpenDisplay, XkbKeycodeToKeysym},
-};
-use x11rb::{
-    connection::Connection,
-    protocol::{xproto::*, Event},
-    rust_connection::RustConnection,
-    wrapper::ConnectionExt as _,
-};
-
 use crate::core::{
     event::ChannelSender,
     input::{InputState, Keys},
 };
+use gl::types::GLenum;
+use x11::{
+    glx::__GLXcontextRec,
+    keysym::*,
+    xlib::{
+        Display, KeyCode, ShiftMask, VisualID, VisualIDMask, XDefaultScreen, XOpenDisplay,
+        XVisualInfo, XkbKeycodeToKeysym,
+    },
+    xlib_xcb::XSetEventQueueOwner,
+};
+use x11rb::{
+    connection::Connection,
+    protocol::{glx, xproto::*, Event},
+    wrapper::ConnectionExt as _,
+};
+use x11rb::{protocol::xproto::ConnectionExt, xcb_ffi::XCBConnection};
+
+const GL_TRUE: i32 = 1;
+const GL_FALSE: i32 = 0;
+
+const GL_DEPTH_TEST: GLenum = 0x0B71;
 
 pub(super) struct Xorg {
-    pub(super) connection: Arc<RustConnection>,
+    pub(super) connection: Arc<XCBConnection>,
     pub(super) screen: Screen,
     pub(super) window: Window,
     pub(super) wm_protocols: u32,
     pub(super) wm_delete_window: u32,
     pub(super) display: *mut Display,
+    pub(super) width: u16,
+    pub(super) height: u16,
+    pub(super) opengl_context: *mut __GLXcontextRec,
+}
+
+pub fn get_visual_info_from_xid(display: *mut Display, xid: VisualID) -> XVisualInfo {
+    assert_ne!(xid, 0);
+    let mut template: XVisualInfo = unsafe { std::mem::zeroed() };
+    template.visualid = xid;
+
+    let mut num_visuals = 0;
+    let vi = unsafe {
+        x11::xlib::XGetVisualInfo(display, VisualIDMask, &mut template, &mut num_visuals)
+    };
+    assert!(!vi.is_null());
+    assert!(num_visuals == 1);
+
+    let vi_copy = unsafe { std::ptr::read(vi as *const _) };
+    unsafe {
+        x11::xlib::XFree(vi as *mut _);
+    }
+    vi_copy
 }
 
 impl Xorg {
     pub(super) fn create_window(x: i16, y: i16, width: u16, height: u16) -> Xorg {
-        let (conn, screen_num) = x11rb::connect(None).unwrap();
+        let (conn, screen_num, display) = unsafe {
+            let display = XOpenDisplay(std::ptr::null::<i8>());
+            let screen_num = XDefaultScreen(display);
+            let conn = x11::xlib_xcb::XGetXCBConnection(display);
+
+            XSetEventQueueOwner(display, x11::xlib_xcb::XEventQueueOwner::XCBOwnsEventQueue);
+            let conn = x11rb::xcb_ffi::XCBConnection::from_raw_xcb_connection(conn, false).unwrap();
+            (conn, screen_num as usize, display)
+        };
         let conn1 = std::sync::Arc::new(conn);
         let conn = &conn1;
         let screen = conn.setup().roots[screen_num].clone();
+        let mut visual_info = get_visual_info_from_xid(display, screen.root_visual as u64);
+        check_visual(&screen, screen.root_visual);
         let window = conn.generate_id().unwrap();
 
         let gc_id = conn.generate_id().unwrap();
@@ -124,12 +166,23 @@ impl Xorg {
 
         conn.map_window(window).unwrap();
 
+        let glc = unsafe {
+            x11::glx::glXCreateContext(
+                display,
+                &mut visual_info as *mut XVisualInfo,
+                ::std::ptr::null_mut(),
+                GL_TRUE,
+            )
+        };
+        unsafe { x11::glx::glXMakeCurrent(display, window as u64, glc) };
+
+        gl_loader::init_gl();
+        gl::load_with(|symbol| gl_loader::get_proc_address(symbol) as *const _);
+        unsafe { gl::Enable(GL_DEPTH_TEST) };
+
         if let Err(err) = conn.flush() {
             println!("An error occured when flushing the stream: {}", err);
         }
-
-        // let display = unsafe { XOpenDisplay(title.as_bytes().as_ptr() as *const i8) };
-        let display = unsafe { XOpenDisplay(std::ptr::null::<i8>()) };
 
         Xorg {
             connection: conn.clone(),
@@ -138,6 +191,9 @@ impl Xorg {
             wm_protocols,
             wm_delete_window,
             display,
+            width,
+            height,
+            opengl_context: glc,
         }
     }
 
@@ -160,7 +216,25 @@ impl Xorg {
                 println!("Received key: {:?}", key);
                 input.input_process_key(channel.clone(), key, true)
             }
-            Event::Expose(_event) => {}
+            Event::ButtonPress(event) => {
+                println!("Received button click: {:?}", event.detail);
+            }
+            Event::ButtonRelease(event) => {
+                println!("Received button release: {:?}", event.detail);
+            }
+            Event::MotionNotify(event) => {
+                println!("Received motion: {:?}", event.detail);
+            }
+            Event::Expose(_event) => {
+                unsafe { gl::Viewport(0, 0, self.width as i32, self.height as i32) };
+                unsafe { x11::glx::glXSwapBuffers(self.display, self.window as u64) };
+                /* do drawing here */
+                unsafe {
+                    gl::ClearColor(0.3, 0.3, 0.5, 1.0);
+                    gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+                }
+                unsafe { x11::glx::glXSwapBuffers(self.display, self.window as u64) };
+            }
             Event::ConfigureNotify(_event) => {}
             Event::ClientMessage(event) => {
                 let data = event.data.as_data32();
@@ -169,6 +243,16 @@ impl Xorg {
                     && data[0] == self.wm_delete_window
                 {
                     println!("Window was asked to close");
+                    unsafe {
+                        x11::glx::glXMakeCurrent(
+                            self.display,
+                            0, /* None ? */
+                            ::std::ptr::null_mut(),
+                        );
+                    };
+                    unsafe { x11::glx::glXDestroyContext(self.display, self.opengl_context) };
+                    unsafe { x11::xlib::XDestroyWindow(self.display, self.window as u64) };
+                    unsafe { x11::xlib::XCloseDisplay(self.display) };
                     quit_flagged = true;
                 }
             }
@@ -177,6 +261,38 @@ impl Xorg {
         }
 
         !quit_flagged
+    }
+}
+
+/// Check that the given visual is "as expected" (pixel values are 0xRRGGBB with RR/GG/BB being the
+/// colors). Otherwise, this exits the process.
+fn check_visual(screen: &Screen, id: Visualid) {
+    // Find the information about the visual and at the same time check its depth.
+    let visual_info = screen
+        .allowed_depths
+        .iter()
+        .filter_map(|depth| {
+            let info = depth.visuals.iter().find(|depth| depth.visual_id == id);
+            info.map(|info| (depth.depth, info))
+        })
+        .next();
+    let (depth, visual_type) = match visual_info {
+        Some(info) => info,
+        None => {
+            eprintln!("Did not find the root visual's description?!");
+            std::process::exit(1);
+        }
+    };
+    // Check that the pixels have red/green/blue components that we can set directly.
+    match visual_type.class {
+        VisualClass::TRUE_COLOR | VisualClass::DIRECT_COLOR => {}
+        _ => {
+            eprintln!(
+                "The root visual is not true / direct color, but {:?}",
+                visual_type,
+            );
+            std::process::exit(1);
+        }
     }
 }
 
