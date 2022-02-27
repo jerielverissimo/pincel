@@ -17,6 +17,9 @@ gl = "0.14.0"
 x11-dl = "2.19.1"
 gl_loader = "0.1.2"
 
+[build-dependencies]
+walkdir = "2.3.2"
+
 [profile.release]
 opt-level = 3
 debug = false

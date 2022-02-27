@@ -1,8 +1,10 @@
-use std::sync::Arc;
+use std::{ffi::CString, path::Path, sync::Arc};
 
 use crate::core::{
     event::ChannelSender,
     input::{InputState, Keys},
+    renderer::opengl::render,
+    resources::Resources,
 };
 use gl::types::GLenum;
 use x11::{
@@ -36,6 +38,7 @@ pub(super) struct Xorg {
     pub(super) width: u16,
     pub(super) height: u16,
     pub(super) opengl_context: *mut __GLXcontextRec,
+    vao: gl::types::GLuint,
 }
 
 pub fn get_visual_info_from_xid(display: *mut Display, xid: VisualID) -> XVisualInfo {
@@ -184,6 +187,47 @@ impl Xorg {
             println!("An error occured when flushing the stream: {}", err);
         }
 
+        let res = Resources::from_relative_exe_path(Path::new("triangle")).unwrap();
+
+        let shader_program = render::Program::from_res(&res, "shaders/triangle").unwrap();
+
+        shader_program.set_used();
+
+        let vertices: Vec<f32> = vec![-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
+
+        let mut vbo: gl::types::GLuint = 0;
+        unsafe {
+            gl::GenBuffers(1, &mut vbo);
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+            gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (vertices.len() * std::mem::size_of::<i32>()) as gl::types::GLsizeiptr,
+                vertices.as_ptr() as *const gl::types::GLvoid,
+                gl::STATIC_DRAW,
+            );
+
+            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+        }
+
+        let mut vao: gl::types::GLuint = 0;
+        unsafe {
+            gl::GenVertexArrays(1, &mut vao);
+            gl::BindVertexArray(vao);
+            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+            gl::EnableVertexAttribArray(0);
+            gl::VertexAttribPointer(
+                0,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                (3 * std::mem::size_of::<f32>()) as gl::types::GLint,
+                std::ptr::null(),
+            );
+
+            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
+            gl::BindVertexArray(0);
+        }
+
         Xorg {
             connection: conn.clone(),
             screen,
@@ -194,6 +238,7 @@ impl Xorg {
             width,
             height,
             opengl_context: glc,
+            vao,
         }
     }
 
@@ -232,6 +277,8 @@ impl Xorg {
                 unsafe {
                     gl::ClearColor(0.3, 0.3, 0.5, 1.0);
                     gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+                    gl::BindVertexArray(self.vao);
+                    gl::DrawArrays(gl::TRIANGLES, 0, 3);
                 }
                 unsafe { x11::glx::glXSwapBuffers(self.display, self.window as u64) };
             }
