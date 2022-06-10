@@ -11,7 +11,7 @@ edition = "2018"
 [dependencies]
 x11rb = "0.6.0"
 x11 = { version = "2.18.2", features = ["xlib"]  }
-image = "0.23.8"
+image = "0.23.12"
 chrono = "0.4.15"
 
 [profile.release]
