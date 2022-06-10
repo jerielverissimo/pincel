@@ -10,10 +10,8 @@ use crate::core::{
     renderer::opengl::{
         camera::{self, TargetCamera},
         color_buffer::{self, ColorBuffer},
-        cube::Cube,
         debug_lines::{DebugLines, PointMarker, Polyline, RayMarker},
         line::{self, Line},
-        triangle::{self, Triangle},
         viewport::{self, Viewport},
     },
     resources::Resources,
@@ -57,16 +55,9 @@ pub(super) struct Xorg {
     pub(super) opengl_context: *mut __GLXcontextRec,
     viewport: Viewport,
     color_buffer: ColorBuffer,
-    debug_lines: DebugLines,
-    p: Option<Polyline>,
-    p2: Option<Polyline>,
-    triangle: Triangle,
-    line: Line,
     time: Instant,
     camera: TargetCamera,
-    camera_target_marker: PointMarker,
     side_cam: bool,
-    cube: Cube,
 }
 
 fn get_visual_info(display: *mut Display, screen_num: i32, xid: VisualID) -> XVisualInfo {
@@ -230,29 +221,8 @@ impl Xorg {
             );
         }
 
-        let res = Resources::from_relative_exe_path(Path::new("triangle")).unwrap();
-
         let viewport = viewport::Viewport::for_window(width as i32, height as i32);
         let mut color_buffer = color_buffer::ColorBuffer::new();
-        let debug_lines = DebugLines::new(&res).unwrap();
-        let cube = Cube::new(&res, &debug_lines).unwrap();
-        let mut p = Some(
-            debug_lines
-                .start_polyline([0.5, -0.5, 0.0].into(), [1.0, 0.0, 0.0, 1.0].into())
-                .with_point([0.0, 0.5, 0.0].into(), [0.0, 1.0, 0.0, 1.0].into())
-                .with_point([-0.5, -0.5, 0.0].into(), [1.0, 1.0, 0.0, 0.0].into())
-                .close_and_finish(),
-        );
-        let mut p2 = Some(
-            debug_lines
-                .start_polyline([0.5, 0.0, -0.5].into(), [1.0, 1.0, 0.0, 1.0].into())
-                .with_point([0.0, 0.0, 0.5].into(), [1.0, 0.0, 0.0, 1.0].into())
-                .with_point([-0.5, 0.0, -0.5].into(), [1.0, 1.0, 0.0, 1.0].into())
-                .close_and_finish(),
-        );
-
-        let triangle = triangle::Triangle::new(&res).unwrap();
-        let line = line::Line::new(&res).unwrap();
 
         let camera = camera::TargetCamera::new(
             width as f32 / height as f32,
@@ -262,8 +232,6 @@ impl Xorg {
             3.14 / 4.0,
             3.0,
         );
-
-        let camera_target_marker = debug_lines.marker(camera.target, 0.25);
 
         color_buffer.set_clear_color(na::Vector3::new(0.3, 0.3, 0.5));
 
@@ -284,16 +252,9 @@ impl Xorg {
             opengl_context,
             viewport,
             color_buffer,
-            triangle,
-            line,
-            debug_lines,
-            p,
-            p2,
             time,
             camera,
-            camera_target_marker,
             side_cam,
-            cube,
         }
     }
 
@@ -361,10 +322,7 @@ impl Xorg {
                 self.viewport.set_used();
                 let delta = self.time.elapsed().as_fractional_secs();
                 self.time = Instant::now();
-                if self.camera.update(delta as f32) {
-                    self.camera_target_marker
-                        .update_position(self.camera.target);
-                }
+                if self.camera.update(delta as f32) {}
 
                 let vp_matrix = self.camera.get_vp_matrix();
 
@@ -380,8 +338,6 @@ impl Xorg {
                 //     &self.camera.get_p_matrix(),
                 //     &self.camera.project_pos().coords,
                 // );
-                self.debug_lines.render(&self.color_buffer, &vp_matrix);
-                self.line.render(&self.color_buffer, &vp_matrix);
 
                 unsafe { x11::glx::glXSwapBuffers(self.display, self.window as u64) };
             }
