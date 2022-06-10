@@ -4,6 +4,8 @@ use std::{
     sync::mpsc::{channel, Receiver, Sender},
 };
 
+use super::logger::{log_output, LogLevel};
+
 const MAX_MESSAGE_CODES: usize = 16384;
 
 pub enum Message {
@@ -23,27 +25,34 @@ pub enum Message {
 
 #[derive(Clone)]
 pub struct ChannelSender {
-    pub tx: Sender<Message>,
+    pub tx: Rc<Sender<Message>>,
 }
 
 impl ChannelSender {
     pub fn send(&self, msg: Message) {
         match self.tx.send(msg) {
-            Ok(_) => println!(""),
-            Err(e) => println!("Failed to send message {}", e),
+            Ok(_) => {}
+            Err(e) => log_output(
+                super::logger::LogLevel::Error,
+                format!("Failed to send message {}", e),
+            ),
         };
     }
 }
 
+#[derive(Debug)]
 pub struct Channel {
-    pub tx: Sender<Message>,
+    pub tx: Rc<Sender<Message>>,
     pub rx: Receiver<Message>,
 }
 
 impl Channel {
     pub(crate) fn new() -> Self {
         let (tx, rx) = channel();
-        Channel { tx, rx }
+        Channel {
+            tx: Rc::new(tx),
+            rx,
+        }
     }
 
     pub fn sender(&self) -> ChannelSender {
@@ -51,9 +60,19 @@ impl Channel {
             tx: self.tx.clone(),
         }
     }
+
+    pub fn send(&self, msg: Message) {
+        match self.tx.send(msg) {
+            Ok(_) => {}
+            Err(e) => log_output(
+                super::logger::LogLevel::Error,
+                format!("Failed to send message {}", e),
+            ),
+        };
+    }
 }
 
-pub trait Listener: Any {
+pub trait Listener: Any + std::fmt::Debug {
     fn as_any(&self) -> &dyn Any;
     fn dyn_clone(&self) -> Box<dyn Listener>;
     fn dyn_eq(&self, other: &Box<dyn Listener>) -> bool;
@@ -92,17 +111,18 @@ pub type PfnOnEvent = fn(
     channel: ChannelSender,
 ) -> bool;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct RegisteredEvent {
     listener: Option<Rc<Box<dyn Listener>>>,
     callback: Option<PfnOnEvent>,
 }
 
-#[derive(Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct EventCodeEntry {
     events: Option<Vec<RegisteredEvent>>,
 }
 
+#[derive(Debug)]
 pub struct EventSystem {
     pub channel: Channel,
     registered: Vec<EventCodeEntry>,
@@ -131,7 +151,10 @@ impl EventSystem {
                     context,
                     channel,
                 } => {
-                    println!("PUB: Received message code: {:?} ", code);
+                    log_output(
+                        LogLevel::Info,
+                        format!("PUB: Received message code: {:?} ", code),
+                    );
                     self.fire(code, sender, context, channel);
                 }
                 Message::Sub {
@@ -139,11 +162,14 @@ impl EventSystem {
                     listener,
                     on_event,
                 } => {
-                    println!("SUB: Received message code: {:?} ", code);
+                    log_output(
+                        LogLevel::Info,
+                        format!("SUB: Received message code: {:?} ", code),
+                    );
                     self.register(code, listener, on_event);
                 }
             },
-            Err(e) => println!("Error on recieved message {}", e),
+            Err(e) => log_output(LogLevel::Error, format!("Error on recieved message: {}", e)),
         }
     }
 

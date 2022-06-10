@@ -5,15 +5,18 @@ use xorg::Xorg;
 
 use super::{event::ChannelSender, input::InputState};
 
+#[derive(Debug)]
 pub enum Backend {
     Xorg,
     Wayland,
 }
 
+#[derive(Debug)]
 pub enum Platform {
     Linux { backend: Backend },
 }
 
+#[derive(Debug)]
 pub struct PlatformState {
     platform: Platform,
     internal_state: Option<Box<dyn Any>>,
@@ -44,7 +47,7 @@ impl PlatformState {
         false
     }
 
-    pub fn pump_messages(&mut self, input: InputState, channel: ChannelSender) -> bool {
+    pub fn pump_messages(&mut self, input: &mut InputState, channel: ChannelSender) -> bool {
         match self.platform {
             Platform::Linux { ref backend } => match backend {
                 Backend::Wayland => true,

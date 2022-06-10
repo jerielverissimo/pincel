@@ -1,14 +1,31 @@
-use std::{ffi::CString, path::Path, sync::Arc};
+use std::{ffi::CString, path::Path, sync::Arc, time::Instant};
 
 use crate::core::{
-    event::ChannelSender,
-    input::{InputState, Keys},
-    renderer::opengl::render,
+    event::{ChannelSender, Data, EventContext, Message, SystemEventCode},
+    input::{
+        Buttons, InputState, Keys, LEFT_MOUSE_BUTTON, MIDDLE_MOUSE_BUTTON, RIGHT_MOUSE_BUTTON,
+        SCROLL_WHEEL_DOWN, SCROLL_WHEEL_UP,
+    },
+    logger::{log_output, LogLevel},
+    renderer::opengl::{
+        camera::{self, TargetCamera},
+        color_buffer::{self, ColorBuffer},
+        cube::Cube,
+        debug_lines::{DebugLines, PointMarker, Polyline, RayMarker},
+        line::{self, Line},
+        triangle::{self, Triangle},
+        viewport::{self, Viewport},
+    },
     resources::Resources,
 };
+use floating_duration::TimeAsFloat;
 use gl::types::GLenum;
+use nalgebra as na;
 use x11::{
-    glx::__GLXcontextRec,
+    glx::{
+        self, __GLXcontextRec, GLX_BLUE_SIZE, GLX_DEPTH_SIZE, GLX_DOUBLEBUFFER, GLX_GREEN_SIZE,
+        GLX_RED_SIZE, GLX_RGBA, GLX_SAMPLES, GLX_SAMPLE_BUFFERS, GLX_STENCIL_SIZE,
+    },
     keysym::*,
     xlib::{
         Display, KeyCode, ShiftMask, VisualID, VisualIDMask, XDefaultScreen, XOpenDisplay,
@@ -18,7 +35,7 @@ use x11::{
 };
 use x11rb::{
     connection::Connection,
-    protocol::{glx, xproto::*, Event},
+    protocol::{xinput::BUTTON_PRESS_EVENT, xproto::*, Event},
     wrapper::ConnectionExt as _,
 };
 use x11rb::{protocol::xproto::ConnectionExt, xcb_ffi::XCBConnection};
@@ -38,26 +55,46 @@ pub(super) struct Xorg {
     pub(super) width: u16,
     pub(super) height: u16,
     pub(super) opengl_context: *mut __GLXcontextRec,
-    vao: gl::types::GLuint,
+    viewport: Viewport,
+    color_buffer: ColorBuffer,
+    debug_lines: DebugLines,
+    p: Option<Polyline>,
+    p2: Option<Polyline>,
+    triangle: Triangle,
+    line: Line,
+    time: Instant,
+    camera: TargetCamera,
+    camera_target_marker: PointMarker,
+    side_cam: bool,
+    cube: Cube,
 }
 
-pub fn get_visual_info_from_xid(display: *mut Display, xid: VisualID) -> XVisualInfo {
-    assert_ne!(xid, 0);
-    let mut template: XVisualInfo = unsafe { std::mem::zeroed() };
-    template.visualid = xid;
-
-    let mut num_visuals = 0;
-    let vi = unsafe {
-        x11::xlib::XGetVisualInfo(display, VisualIDMask, &mut template, &mut num_visuals)
-    };
-    assert!(!vi.is_null());
-    assert!(num_visuals == 1);
-
-    let vi_copy = unsafe { std::ptr::read(vi as *const _) };
+fn get_visual_info(display: *mut Display, screen_num: i32, xid: VisualID) -> XVisualInfo {
+    let mut glx_attribs = [
+        GLX_RGBA,
+        GLX_DOUBLEBUFFER,
+        GLX_DEPTH_SIZE,
+        24,
+        GLX_STENCIL_SIZE,
+        8,
+        GLX_RED_SIZE,
+        8,
+        GLX_GREEN_SIZE,
+        8,
+        GLX_BLUE_SIZE,
+        8,
+        GLX_SAMPLE_BUFFERS,
+        0,
+        GLX_SAMPLES,
+        0,
+        0,
+    ];
     unsafe {
-        x11::xlib::XFree(vi as *mut _);
+        glx::glXChooseVisual(display, screen_num, glx_attribs.as_mut_ptr())
+            .as_ref()
+            .unwrap()
+            .to_owned()
     }
-    vi_copy
 }
 
 impl Xorg {
@@ -74,7 +111,8 @@ impl Xorg {
         let conn1 = std::sync::Arc::new(conn);
         let conn = &conn1;
         let screen = conn.setup().roots[screen_num].clone();
-        let mut visual_info = get_visual_info_from_xid(display, screen.root_visual as u64);
+        let mut visual_info =
+            get_visual_info(display, screen_num as i32, screen.root_visual as u64);
         check_visual(&screen, screen.root_visual);
         let window = conn.generate_id().unwrap();
 
@@ -102,7 +140,9 @@ impl Xorg {
                     | EventMask::KEY_RELEASE
                     | EventMask::LEAVE_WINDOW
                     | EventMask::FOCUS_CHANGE
-                    | EventMask::ENTER_WINDOW,
+                    | EventMask::ENTER_WINDOW
+                    | EventMask::RESIZE_REDIRECT
+                    | EventMask::VISIBILITY_CHANGE,
             )
             .background_pixel(screen.white_pixel)
             .win_gravity(Gravity::NORTH_WEST);
@@ -169,7 +209,7 @@ impl Xorg {
 
         conn.map_window(window).unwrap();
 
-        let glc = unsafe {
+        let opengl_context = unsafe {
             x11::glx::glXCreateContext(
                 display,
                 &mut visual_info as *mut XVisualInfo,
@@ -177,56 +217,60 @@ impl Xorg {
                 GL_TRUE,
             )
         };
-        unsafe { x11::glx::glXMakeCurrent(display, window as u64, glc) };
+        unsafe { x11::glx::glXMakeCurrent(display, window as u64, opengl_context) };
 
         gl_loader::init_gl();
         gl::load_with(|symbol| gl_loader::get_proc_address(symbol) as *const _);
         unsafe { gl::Enable(GL_DEPTH_TEST) };
 
         if let Err(err) = conn.flush() {
-            println!("An error occured when flushing the stream: {}", err);
+            log_output(
+                LogLevel::Error,
+                format!("An error occured when flushing the stream: {}", err),
+            );
         }
 
         let res = Resources::from_relative_exe_path(Path::new("triangle")).unwrap();
 
-        let shader_program = render::Program::from_res(&res, "shaders/triangle").unwrap();
+        let viewport = viewport::Viewport::for_window(width as i32, height as i32);
+        let mut color_buffer = color_buffer::ColorBuffer::new();
+        let debug_lines = DebugLines::new(&res).unwrap();
+        let cube = Cube::new(&res, &debug_lines).unwrap();
+        let mut p = Some(
+            debug_lines
+                .start_polyline([0.5, -0.5, 0.0].into(), [1.0, 0.0, 0.0, 1.0].into())
+                .with_point([0.0, 0.5, 0.0].into(), [0.0, 1.0, 0.0, 1.0].into())
+                .with_point([-0.5, -0.5, 0.0].into(), [1.0, 1.0, 0.0, 0.0].into())
+                .close_and_finish(),
+        );
+        let mut p2 = Some(
+            debug_lines
+                .start_polyline([0.5, 0.0, -0.5].into(), [1.0, 1.0, 0.0, 1.0].into())
+                .with_point([0.0, 0.0, 0.5].into(), [1.0, 0.0, 0.0, 1.0].into())
+                .with_point([-0.5, 0.0, -0.5].into(), [1.0, 1.0, 0.0, 1.0].into())
+                .close_and_finish(),
+        );
 
-        shader_program.set_used();
+        let triangle = triangle::Triangle::new(&res).unwrap();
+        let line = line::Line::new(&res).unwrap();
 
-        let vertices: Vec<f32> = vec![-0.5, -0.5, 0.0, 0.5, -0.5, 0.0, 0.0, 0.5, 0.0];
+        let camera = camera::TargetCamera::new(
+            width as f32 / height as f32,
+            3.14 / 2.0,
+            0.01,
+            1000.0,
+            3.14 / 4.0,
+            3.0,
+        );
 
-        let mut vbo: gl::types::GLuint = 0;
-        unsafe {
-            gl::GenBuffers(1, &mut vbo);
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-            gl::BufferData(
-                gl::ARRAY_BUFFER,
-                (vertices.len() * std::mem::size_of::<i32>()) as gl::types::GLsizeiptr,
-                vertices.as_ptr() as *const gl::types::GLvoid,
-                gl::STATIC_DRAW,
-            );
+        let camera_target_marker = debug_lines.marker(camera.target, 0.25);
 
-            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-        }
+        color_buffer.set_clear_color(na::Vector3::new(0.3, 0.3, 0.5));
 
-        let mut vao: gl::types::GLuint = 0;
-        unsafe {
-            gl::GenVertexArrays(1, &mut vao);
-            gl::BindVertexArray(vao);
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-            gl::EnableVertexAttribArray(0);
-            gl::VertexAttribPointer(
-                0,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                (3 * std::mem::size_of::<f32>()) as gl::types::GLint,
-                std::ptr::null(),
-            );
+        // unsafe { gl::PolygonMode(gl::FRONT_AND_BACK, gl::LINE) }
 
-            gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-            gl::BindVertexArray(0);
-        }
+        let mut time = Instant::now();
+        let mut side_cam = false;
 
         Xorg {
             connection: conn.clone(),
@@ -237,17 +281,48 @@ impl Xorg {
             display,
             width,
             height,
-            opengl_context: glc,
-            vao,
+            opengl_context,
+            viewport,
+            color_buffer,
+            triangle,
+            line,
+            debug_lines,
+            p,
+            p2,
+            time,
+            camera,
+            camera_target_marker,
+            side_cam,
+            cube,
         }
     }
 
-    pub(super) fn pump_messages(&mut self, channel: ChannelSender, mut input: InputState) -> bool {
+    pub(super) fn pump_messages(&mut self, channel: ChannelSender, input: &mut InputState) -> bool {
         let mut quit_flagged = false;
         let conn = &self.connection;
         let event = conn.wait_for_event().unwrap();
         match event {
-            Event::KeyPress(event) => {
+            Event::ResizeRequest(event) => {
+                // Fire off an event for immediate processing.
+                let mut context = EventContext {
+                    data: Data { u16: [0; 8] },
+                };
+                unsafe {
+                    context.data.u16[0] = event.width;
+                    context.data.u16[1] = event.height;
+                }
+                channel.send(Message::Pub {
+                    code: SystemEventCode::CODE_RESIZED,
+                    sender: None,
+                    context,
+                    channel: channel.clone(),
+                });
+                self.viewport
+                    .update_size(event.width as i32, event.height as i32);
+                self.viewport.set_used();
+            }
+            Event::KeyPress(event) | Event::KeyRelease(event) => {
+                let pressed = event.response_type == KEY_PRESS_EVENT as u8;
                 let key_sym = unsafe {
                     let code = event.detail;
                     XkbKeycodeToKeysym(
@@ -258,38 +333,85 @@ impl Xorg {
                     )
                 };
                 let key = translate_keycode(key_sym as u32);
-                println!("Received key: {:?}", key);
-                input.input_process_key(channel.clone(), key, true)
+                input.process_key(channel.clone(), key, pressed)
             }
-            Event::ButtonPress(event) => {
-                println!("Received button click: {:?}", event.detail);
-            }
-            Event::ButtonRelease(event) => {
-                println!("Received button release: {:?}", event.detail);
+            Event::ButtonPress(event) | Event::ButtonRelease(event) => {
+                let pressed = event.response_type == BUTTON_PRESS_EVENT as u8;
+                let mut mouse_button = Buttons::BUTTON_MAX_BUTTONS;
+                match event.detail {
+                    LEFT_MOUSE_BUTTON => mouse_button = Buttons::BUTTON_LEFT,
+                    MIDDLE_MOUSE_BUTTON => mouse_button = Buttons::BUTTON_MIDDLE,
+                    RIGHT_MOUSE_BUTTON => mouse_button = Buttons::BUTTON_RIGHT,
+                    SCROLL_WHEEL_UP => mouse_button = Buttons::BUTTON_SCROLL_WHEEL_UP,
+                    SCROLL_WHEEL_DOWN => mouse_button = Buttons::BUTTON_SCROLL_WHEEL_DOWN,
+                    _ => {}
+                }
+                // Pass over to the input subsystem.
+                if mouse_button != Buttons::BUTTON_MAX_BUTTONS {
+                    input.process_button(channel.clone(), mouse_button, pressed);
+                }
             }
             Event::MotionNotify(event) => {
-                println!("Received motion: {:?}", event.detail);
+                // Pass over to the input subsystem.
+                input.process_mouse_move(channel.clone(), event.event_x, event.event_y);
             }
             Event::Expose(_event) => {
-                unsafe { gl::Viewport(0, 0, self.width as i32, self.height as i32) };
-                unsafe { x11::glx::glXSwapBuffers(self.display, self.window as u64) };
+                // unsafe { x11::glx::glXSwapBuffers(self.display, self.window as u64) };
                 /* do drawing here */
-                unsafe {
-                    gl::ClearColor(0.3, 0.3, 0.5, 1.0);
-                    gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-                    gl::BindVertexArray(self.vao);
-                    gl::DrawArrays(gl::TRIANGLES, 0, 3);
+                self.viewport.set_used();
+                let delta = self.time.elapsed().as_fractional_secs();
+                self.time = Instant::now();
+                if self.camera.update(delta as f32) {
+                    self.camera_target_marker
+                        .update_position(self.camera.target);
                 }
+
+                let vp_matrix = self.camera.get_vp_matrix();
+
+                unsafe {
+                    gl::Enable(gl::CULL_FACE);
+                    gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+                    gl::Enable(gl::DEPTH_TEST);
+                }
+
+                self.color_buffer.clear();
+                // self.cube.render(
+                //     &self.camera.get_view_matrix(),
+                //     &self.camera.get_p_matrix(),
+                //     &self.camera.project_pos().coords,
+                // );
+                self.debug_lines.render(&self.color_buffer, &vp_matrix);
+                self.line.render(&self.color_buffer, &vp_matrix);
+
                 unsafe { x11::glx::glXSwapBuffers(self.display, self.window as u64) };
             }
-            Event::ConfigureNotify(_event) => {}
+            Event::ConfigureNotify(event) => {
+                // Fire off an event for immediate processing.
+                let mut context = EventContext {
+                    data: Data { u16: [0; 8] },
+                };
+                unsafe {
+                    context.data.u16[0] = event.width;
+                    context.data.u16[1] = event.height;
+                }
+                self.viewport.w = event.width as i32;
+                self.viewport.h = event.height as i32;
+                channel.send(Message::Pub {
+                    code: SystemEventCode::CODE_RESIZED,
+                    sender: None,
+                    context,
+                    channel: channel.clone(),
+                });
+                // self.viewport.set_used();
+                // unsafe { x11::glx::glXSwapBuffers(self.display, self.window as u64) };
+            }
             Event::ClientMessage(event) => {
                 let data = event.data.as_data32();
                 if event.format == 32
                     && event.window == self.window
                     && data[0] == self.wm_delete_window
                 {
-                    println!("Window was asked to close");
+                    log_output(LogLevel::Info, "Window was asked to close");
                     unsafe {
                         x11::glx::glXMakeCurrent(
                             self.display,
@@ -303,8 +425,11 @@ impl Xorg {
                     quit_flagged = true;
                 }
             }
-            Event::Error(_) => println!("Got an unexpected error"),
-            _ => println!("Got an unknown event"),
+            Event::Error(error) => log_output(
+                LogLevel::Error,
+                format!("Got an unexpected error: {:?}", error),
+            ),
+            _ => log_output(LogLevel::Warn, "Got an unknown event"),
         }
 
         !quit_flagged
@@ -326,7 +451,10 @@ fn check_visual(screen: &Screen, id: Visualid) {
     let (depth, visual_type) = match visual_info {
         Some(info) => info,
         None => {
-            eprintln!("Did not find the root visual's description?!");
+            log_output(
+                LogLevel::Fatal,
+                "Did not find the root visual's description?!",
+            );
             std::process::exit(1);
         }
     };
@@ -334,9 +462,12 @@ fn check_visual(screen: &Screen, id: Visualid) {
     match visual_type.class {
         VisualClass::TRUE_COLOR | VisualClass::DIRECT_COLOR => {}
         _ => {
-            eprintln!(
-                "The root visual is not true / direct color, but {:?}",
-                visual_type,
+            log_output(
+                LogLevel::Fatal,
+                format!(
+                    "The root visual is not true / direct color, but {:?}",
+                    visual_type,
+                ),
             );
             std::process::exit(1);
         }

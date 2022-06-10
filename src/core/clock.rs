@@ -1,6 +1,6 @@
 use chrono::{Local, Timelike};
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Clock {
     pub start_time: f64,
     pub elapsed: f64,

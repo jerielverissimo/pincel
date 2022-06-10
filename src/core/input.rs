@@ -2,19 +2,19 @@ use num_derive::FromPrimitive;
 
 use super::event::{ChannelSender, Data, EventContext, Message, SystemEventCode};
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct KeyboardState {
     keys: [bool; 258],
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct MouseState {
     x: i16,
     y: i16,
-    buttons: [bool; 3],
+    buttons: [bool; 5],
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct InputState {
     keyboard_current: KeyboardState,
     keyboard_previous: KeyboardState,
@@ -30,22 +30,23 @@ impl InputState {
             mouse_current: MouseState {
                 x: 0,
                 y: 0,
-                buttons: [false; 3],
+                buttons: [false; 5],
             },
             mouse_previous: MouseState {
                 x: 0,
                 y: 0,
-                buttons: [false; 3],
+                buttons: [false; 5],
             },
         }
     }
 
-    pub fn input_update(&mut self, delta_time: f64) {
+    pub fn update(&mut self, delta_time: f64) {
         // Copy current states to previous states.
         self.keyboard_previous = self.keyboard_current;
         self.mouse_previous = self.mouse_current;
     }
-    pub fn input_process_key(&mut self, channel: ChannelSender, key: Keys, pressed: bool) {
+
+    pub fn process_key(&mut self, channel: ChannelSender, key: Keys, pressed: bool) {
         // Only handle this if the state actually changed.
         if self.keyboard_current.keys[key as usize] != pressed {
             // Update internal state.
@@ -70,23 +71,50 @@ impl InputState {
             });
         }
     }
-    pub fn input_process_button(&mut self, channel: ChannelSender, button: Buttons, pressed: bool) {
+
+    pub fn process_button(&mut self, channel: ChannelSender, button: Buttons, pressed: bool) {
         // If the state changed, fire an event.
-        self.mouse_current.buttons[button as usize] = pressed;
+        if self.mouse_current.buttons[button as usize] != pressed {
+            // Update internal state.
+            self.mouse_current.buttons[button as usize] = pressed;
+
+            // Fire the event.
+            let mut context = EventContext {
+                data: Data { u16: [0; 8] },
+            };
+            unsafe {
+                context.data.u16[0] = button as u16;
+            }
+            channel.send(Message::Pub {
+                code: if pressed {
+                    SystemEventCode::CODE_BUTTON_PRESSED
+                } else {
+                    SystemEventCode::CODE_BUTTON_RELEASED
+                },
+                sender: None,
+                context,
+                channel: channel.clone(),
+            });
+        }
+    }
+
+    pub fn process_mouse_move(&mut self, channel: ChannelSender, x: i16, y: i16) {
+        // If the state changed, fire an event.
+        if self.mouse_current.x != x || self.mouse_current.y != y {
+            self.mouse_current.x = x;
+            self.mouse_current.y = y;
+        }
 
         // Fire the event.
         let mut context = EventContext {
-            data: Data { u16: [0; 8] },
+            data: Data { i16: [0; 8] },
         };
         unsafe {
-            context.data.u16[0] = button as u16;
+            context.data.i16[0] = x;
+            context.data.i16[1] = y;
         }
         channel.send(Message::Pub {
-            code: if pressed {
-                SystemEventCode::CODE_BUTTON_PRESSED
-            } else {
-                SystemEventCode::CODE_BUTTON_RELEASED
-            },
+            code: SystemEventCode::CODE_MOUSE_MOVED,
             sender: None,
             context,
             channel: channel.clone(),
@@ -94,12 +122,20 @@ impl InputState {
     }
 }
 
+pub const LEFT_MOUSE_BUTTON: u8 = 1;
+pub const MIDDLE_MOUSE_BUTTON: u8 = 2;
+pub const RIGHT_MOUSE_BUTTON: u8 = 3;
+pub const SCROLL_WHEEL_UP: u8 = 4;
+pub const SCROLL_WHEEL_DOWN: u8 = 5;
+
 #[allow(non_camel_case_types)]
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, FromPrimitive, PartialEq, Eq, Debug)]
 pub enum Buttons {
     BUTTON_LEFT,
     BUTTON_RIGHT,
     BUTTON_MIDDLE,
+    BUTTON_SCROLL_WHEEL_UP,
+    BUTTON_SCROLL_WHEEL_DOWN,
     BUTTON_MAX_BUTTONS,
 }
 

@@ -19,7 +19,7 @@ fn main() {
 
     copy(
         &manifest_dir.join("assets"),
-        &executable_path.join("assets-07"),
+        &executable_path.join("triangle"),
     );
 }
 

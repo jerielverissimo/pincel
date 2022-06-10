@@ -10,12 +10,17 @@ edition = "2021"
 x11rb = { version = "0.9.0", features = ["allow-unsafe-code", "glx", "all-extensions"] } 
 x11 = { version = "2.19.1", features = ["xlib", "xlib_xcb", "glx"] }
 chrono = "0.4.19"
+half = "1.1.1"
 num = "0.4.0"
 num-derive = "0.3.3"
 num-traits = "0.2.14"
 gl = "0.14.0"
 x11-dl = "2.19.1"
 gl_loader = "0.1.2"
+vec-2-10-10-10 = "0.1.2"
+nalgebra = "0.30.1"
+floating-duration = "0.1.2"
+image = "0.20"
 
 [build-dependencies]
 walkdir = "2.3.2"
